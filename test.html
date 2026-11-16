@@ -257,6 +257,8 @@ footer {
     <option value="วางแผน">วางแผนตรวจสอบ</option>
   </select>
 
+  <select id="inspectionFilter" onchange="render()"><option value="">ทุกสถานะการตรวจสอบ</option><option value="ตรวจสอบเบื้องต้น">ตรวจสอบเบื้องต้น</option><option value="อยู่ระหว่างตรวจสอบ">อยู่ระหว่างตรวจสอบ</option><option value="ตรวจสอบแล้วเสร็จ 100%">ตรวจสอบแล้วเสร็จ 100%</option><option value="อยู่ระหว่างติดตามผล">อยู่ระหว่างติดตามผล</option><option value="อยู่ระหว่างดำเนินการวินัย">อยู่ระหว่างดำเนินการวินัย</option><option value="อยู่ระหว่างดำเนินการอาญา">อยู่ระหว่างดำเนินการอาญา</option><option value="อยู่ระหว่างดำเนินการปกครอง">อยู่ระหว่างดำเนินการปกครอง</option></select>
+
   <input
     id="search"
     placeholder="🔎 ค้นหาโครงการ"
@@ -347,6 +349,27 @@ footer {
       <label>รายละเอียดเพิ่มเติม</label>
       <textarea id="fDetail"></textarea>
     </div>
+
+
+    <h3 class="field full">📋 ข้อมูลโครงการ / งบประมาณ / ผลการตรวจสอบ</h3>
+    <div class="field full"><label>ที่มางบประมาณ</label><textarea id="fBudgetSource" rows="3"></textarea></div>
+    <div class="field full"><label>หน่วยงานจัดสรรงบประมาณ</label><input id="fBudgetAgency" type="text"></div>
+    <div class="field full"><label>ที่มาโครงการ</label><textarea id="fProjectOrigin" rows="3"></textarea></div>
+    <div class="field full"><label>เลขที่สัญญา</label><input id="fContractNumber" type="text"></div>
+    <div class="field full"><label>ผู้รับจ้าง</label><input id="fContractor" type="text"></div>
+    <div class="field full"><label>ปีงบประมาณ</label><input id="fFiscalYear" type="text"></div>
+    <div class="field full"><label>วันที่เริ่มสัญญา</label><input id="fStartDate" type="date"></div>
+    <div class="field full"><label>วันที่สิ้นสุดสัญญา</label><input id="fEndDate" type="date"></div>
+    <div class="field full"><label>สถานะการตรวจสอบ</label><select id="fInspectionStatus"><option value="">— ยังไม่ระบุ —</option><option value="ตรวจสอบเบื้องต้น">ตรวจสอบเบื้องต้น</option><option value="อยู่ระหว่างตรวจสอบ">อยู่ระหว่างตรวจสอบ</option><option value="ตรวจสอบแล้วเสร็จ 100%">ตรวจสอบแล้วเสร็จ 100%</option><option value="อยู่ระหว่างติดตามผล">อยู่ระหว่างติดตามผล</option><option value="อยู่ระหว่างดำเนินการวินัย">อยู่ระหว่างดำเนินการวินัย</option><option value="อยู่ระหว่างดำเนินการอาญา">อยู่ระหว่างดำเนินการอาญา</option><option value="อยู่ระหว่างดำเนินการปกครอง">อยู่ระหว่างดำเนินการปกครอง</option></select></div>
+    <div class="field full"><label>ข้อมูลโครงการอื่น ๆ</label><textarea id="fOtherInfo" rows="3"></textarea></div>
+    <div class="field full"><label>สาเหตุที่โครงการไม่สามารถใช้ประโยชน์ได้</label><textarea id="fCause" rows="3"></textarea></div>
+    <div class="field full"><label>ผลกระทบ / ความเสียหาย</label><textarea id="fImpact" rows="3"></textarea></div>
+    <div class="field full"><label>มูลค่าความเสียหาย (บาท)</label><input id="fDamageAmount" type="number" min="0" step="any"></div>
+    <div class="field full"><label>ประชาชนที่ได้รับผลกระทบ (คน/ครัวเรือน)</label><input id="fAffectedPeople" type="number" min="0" step="any"></div>
+    <div class="field full"><label>พื้นที่ได้รับผลกระทบ</label><textarea id="fAffectedArea" rows="3"></textarea></div>
+    <div class="field full"><label>วันที่พบความเสียหาย</label><input id="fDamageDate" type="date"></div>
+    <div class="field full"><label>สถานะการยืนยันความเสียหาย</label><select id="fDamageVerification"><option value="">— ยังไม่ระบุ —</option><option value="ข้อมูลที่ประชาชนแจ้ง">ข้อมูลที่ประชาชนแจ้ง</option><option value="อยู่ระหว่างประเมิน">อยู่ระหว่างประเมิน</option><option value="ตรวจสอบยืนยันแล้ว">ตรวจสอบยืนยันแล้ว</option></select></div>
+    <div class="field full"><label>ลิงก์ Google Maps (ไม่บังคับ)</label><input id="fMapUrl" type="text"></div>
 
     <div class="field full">
       <label>เพิ่มหรือเปลี่ยนรูปภาพ</label>
@@ -735,6 +758,7 @@ function render() {
   markerLayer.clearLayers();
 
   const filter = document.getElementById("statusFilter").value;
+  const inspectionFilter = document.getElementById("inspectionFilter").value;
   const search = document.getElementById("search").value
     .trim()
     .toLowerCase();
@@ -749,10 +773,10 @@ function render() {
       p.district,
       p.agency,
       p.budget,
-      p.detail
+      p.detail, p.projectOrigin, p.budgetSource, p.cause, p.impact, p.inspectionStatus
     ].join(" ").toLowerCase();
 
-    return matchesStatus && text.includes(search);
+    return matchesStatus && (!inspectionFilter || p.inspectionStatus === inspectionFilter) && text.includes(search);
   });
 
   filtered.forEach(p => {
@@ -780,6 +804,8 @@ function render() {
   projects.forEach(p=>{const key=p.status||"ไม่ระบุ";totals[key]=(totals[key]||0)+1;});
   const budgets=projects.map(p=>{const t=String(p.budget||"").replace(/,/g,"");const m=t.match(/(\d+(?:\.\d+)?)/);if(!m)return null;const n=Number(m[1]);if(/ล้าน/.test(t))return n*1e6;if(/พันล้าน/.test(t))return n*1e9;if(/บาท/.test(t))return n;return null;}).filter(x=>x!==null);
   document.getElementById("summary").textContent="📊 สรุปสถานะ: "+Object.entries(totals).map(([k,v])=>k+" "+v).join(" | ")+" | 💰 วงเงินที่ระบุเป็นตัวเลข (ประมาณ): "+(budgets.reduce((a,b)=>a+b,0)/1e6).toLocaleString("th-TH",{maximumFractionDigits:2})+" ล้านบาท ("+budgets.length+" โครงการ)";
+  const checks={};projects.forEach(p=>{if(p.inspectionStatus)checks[p.inspectionStatus]=(checks[p.inspectionStatus]||0)+1;});
+  document.getElementById("summary").textContent += " | 🔎 สถานะการตรวจสอบ: "+(Object.entries(checks).map(([k,v])=>k+" "+v).join(" | ")||"ยังไม่ระบุ");
   document.getElementById("stats").textContent =
     "📍 แสดง " + filtered.length +
     " โครงการ จากทั้งหมด " + projects.length + " โครงการ";
@@ -788,6 +814,25 @@ function render() {
 /* ==========================================
    แสดงรายละเอียดเมื่อคลิกหมุด
 ========================================== */
+
+
+const EXTRA_FIELDS = [("budgetSource", "ที่มางบประมาณ"), ("budgetAgency", "หน่วยงานจัดสรรงบประมาณ"), ("projectOrigin", "ที่มาโครงการ"), ("contractNumber", "เลขที่สัญญา"), ("contractor", "ผู้รับจ้าง"), ("fiscalYear", "ปีงบประมาณ"), ("startDate", "วันที่เริ่มสัญญา"), ("endDate", "วันที่สิ้นสุดสัญญา"), ("inspectionStatus", "สถานะการตรวจสอบ"), ("otherInfo", "ข้อมูลโครงการอื่น ๆ"), ("cause", "สาเหตุที่โครงการไม่สามารถใช้ประโยชน์ได้"), ("impact", "ผลกระทบ / ความเสียหาย"), ("damageAmount", "มูลค่าความเสียหาย (บาท)"), ("affectedPeople", "ประชาชนที่ได้รับผลกระทบ (คน/ครัวเรือน)"), ("affectedArea", "พื้นที่ได้รับผลกระทบ"), ("damageDate", "วันที่พบความเสียหาย"), ("damageVerification", "สถานะการยืนยันความเสียหาย"), ("mapUrl", "ลิงก์ Google Maps (ไม่บังคับ)")];
+function extraDetailRows(p){
+  return EXTRA_FIELDS.filter(([key])=>key!=="mapUrl" && p[key]!==undefined && p[key]!==null && String(p[key]).trim()!=="")
+    .map(([key,label])=>`<div class="detail-row"><b>${escapeHTML(label)}:</b> ${escapeHTML(p[key])}</div>`).join("");
+}
+function projectMapsUrl(p){
+  const custom=String(p.mapUrl||"").trim();
+  try { const u=new URL(custom);if(u.protocol==="https:" && (u.hostname==="google.com"||u.hostname.endsWith(".google.com")||u.hostname==="maps.app.goo.gl"||u.hostname==="goo.gl"))return u.href; }catch(e){}
+  if(!validCoordinate(p.lat,p.lng))return "";
+  return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(p.lat+","+p.lng);
+}
+function mapButtons(p){
+  const url=projectMapsUrl(p);if(!url)return "";
+  const nav="https://www.google.com/maps/dir/?api=1&destination="+encodeURIComponent(p.lat+","+p.lng);
+  return `<a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer">🗺️ เปิด Google Maps</a> &nbsp; <a href="${escapeHTML(nav)}" target="_blank" rel="noopener noreferrer">🚗 นำทาง</a> &nbsp; <button type="button" onclick="copyMapLink(${Number(p.id)})">🔗 คัดลอกลิงก์</button>`;
+}
+async function copyMapLink(id){const p=projects.find(x=>x.id===id);if(!p)return;const url=projectMapsUrl(p);try{await navigator.clipboard.writeText(url);alert("คัดลอกลิงก์แล้ว");}catch(e){prompt("คัดลอกลิงก์นี้",url);}}
 
 function showDetail(id) {
 
@@ -837,6 +882,9 @@ function showDetail(id) {
     <div class="detail-row">
       <b>ลองจิจูด:</b> ${escapeHTML(p.lng)}
     </div>
+
+    ${extraDetailRows(p)}
+    <div class="detail-row">${mapButtons(p)}</div>
 
     <h3>🖼️ ภาพประกอบโครงการ</h3>
     <div class="photo-grid">
@@ -923,6 +971,7 @@ function newProject() {
     document.getElementById(id).value = "";
   });
 
+  document.getElementById("fBudgetSource").value="";document.getElementById("fBudgetAgency").value="";document.getElementById("fProjectOrigin").value="";document.getElementById("fContractNumber").value="";document.getElementById("fContractor").value="";document.getElementById("fFiscalYear").value="";document.getElementById("fStartDate").value="";document.getElementById("fEndDate").value="";document.getElementById("fInspectionStatus").value="";document.getElementById("fOtherInfo").value="";document.getElementById("fCause").value="";document.getElementById("fImpact").value="";document.getElementById("fDamageAmount").value="";document.getElementById("fAffectedPeople").value="";document.getElementById("fAffectedArea").value="";document.getElementById("fDamageDate").value="";document.getElementById("fDamageVerification").value="";document.getElementById("fMapUrl").value="";
   document.getElementById("fStatus").value = "วางแผน";
   document.getElementById("fColor").value = "#e83e8c";
   document.getElementById("fPhotos").value="";document.getElementById("fFiles").value="";
@@ -964,6 +1013,7 @@ function editProject(id) {
   document.getElementById("fBudget").value = p.budget || "";
   document.getElementById("fStatus").value = p.status || "วางแผน";
   document.getElementById("fDetail").value = p.detail || "";
+  document.getElementById("fBudgetSource").value=p.budgetSource??"";document.getElementById("fBudgetAgency").value=p.budgetAgency??"";document.getElementById("fProjectOrigin").value=p.projectOrigin??"";document.getElementById("fContractNumber").value=p.contractNumber??"";document.getElementById("fContractor").value=p.contractor??"";document.getElementById("fFiscalYear").value=p.fiscalYear??"";document.getElementById("fStartDate").value=p.startDate??"";document.getElementById("fEndDate").value=p.endDate??"";document.getElementById("fInspectionStatus").value=p.inspectionStatus??"";document.getElementById("fOtherInfo").value=p.otherInfo??"";document.getElementById("fCause").value=p.cause??"";document.getElementById("fImpact").value=p.impact??"";document.getElementById("fDamageAmount").value=p.damageAmount??"";document.getElementById("fAffectedPeople").value=p.affectedPeople??"";document.getElementById("fAffectedArea").value=p.affectedArea??"";document.getElementById("fDamageDate").value=p.damageDate??"";document.getElementById("fDamageVerification").value=p.damageVerification??"";document.getElementById("fMapUrl").value=p.mapUrl??"";
   document.getElementById("fColor").value = /^#[0-9a-fA-F]{6}$/.test(p.color||"")?p.color:"#e83e8c";
   document.getElementById("fLat").value = p.lat ?? "";
   document.getElementById("fLng").value = p.lng ?? "";
@@ -1019,6 +1069,7 @@ async function saveProject(){
   // รหัส UUID-like เพื่อหลีกเลี่ยงการชนกันเมื่อเพิ่มพร้อมกันหลายเครื่อง
   const id=isNew?Number(Date.now().toString()+String(Math.floor(Math.random()*1000)).padStart(3,"0")):editingId;
   const data={...(isNew?{}:projects.find(p=>p.id===editingId)||{}),id,name,tambon:document.getElementById("fTambon").value.trim(),district:document.getElementById("fDistrict").value.trim(),agency:document.getElementById("fAgency").value.trim(),budget:document.getElementById("fBudget").value.trim(),status:document.getElementById("fStatus").value,detail:document.getElementById("fDetail").value.trim(),lat:Number(latText),lng:Number(lngText),color:document.getElementById("fColor").value};
+  data.budgetSource=document.getElementById("fBudgetSource").value.trim();data.budgetAgency=document.getElementById("fBudgetAgency").value.trim();data.projectOrigin=document.getElementById("fProjectOrigin").value.trim();data.contractNumber=document.getElementById("fContractNumber").value.trim();data.contractor=document.getElementById("fContractor").value.trim();data.fiscalYear=document.getElementById("fFiscalYear").value.trim();data.startDate=document.getElementById("fStartDate").value.trim();data.endDate=document.getElementById("fEndDate").value.trim();data.inspectionStatus=document.getElementById("fInspectionStatus").value.trim();data.otherInfo=document.getElementById("fOtherInfo").value.trim();data.cause=document.getElementById("fCause").value.trim();data.impact=document.getElementById("fImpact").value.trim();data.damageAmount=document.getElementById("fDamageAmount").value.trim();data.affectedPeople=document.getElementById("fAffectedPeople").value.trim();data.affectedArea=document.getElementById("fAffectedArea").value.trim();data.damageDate=document.getElementById("fDamageDate").value.trim();data.damageVerification=document.getElementById("fDamageVerification").value.trim();data.mapUrl=document.getElementById("fMapUrl").value.trim();
   busy=true;syncMessage("⏳ กำลังอัปโหลดและบันทึก กรุณารอ...");
   try{
     data.photos=[];for(const p of editingPhotos){if(typeof p==="string")data.photos.push(p);else if(p.pending){const r=await uploadMedia(p.pending);data.photos.push(r.url);}}
@@ -1076,4 +1127,3 @@ loadOnlineProjects();
 
 </body>
 </html>
-
