@@ -741,6 +741,13 @@ L.tileLayer(
 
 const markerLayer = L.layerGroup().addTo(map);
 
+// หมายเลขบนหมุดเป็นเลขลำดับสำหรับแสดงผล ไม่ใช่รหัสฐานข้อมูล
+// เก็บ ID เดิมไว้เสมอ เพื่อไม่ให้กระทบการแก้ไขและข้อมูล 19 โครงการ
+function displayProjectNumber(id) {
+  const ordered = [...projects].sort((a,b) => Number(a.id)-Number(b.id));
+  const index = ordered.findIndex(p => String(p.id) === String(id));
+  return index >= 0 ? String(index+1).padStart(2,"0") : "?";
+}
 function markerIcon(number, color="#e83e8c") {
   return L.divIcon({
     className: "",
@@ -786,7 +793,7 @@ function render() {
     const marker = L.marker(
       [Number(p.lat), Number(p.lng)],
       {
-        icon: markerIcon(p.id,p.color)
+        icon: markerIcon(displayProjectNumber(p.id),p.color)
       }
     );
 
@@ -844,7 +851,7 @@ function showDetail(id) {
     <h2>📍 ${escapeHTML(p.name)}</h2>
 
     <div class="detail-row">
-      <b>หมายเลขโครงการ:</b> ${escapeHTML(p.id)}
+      <b>หมายเลขโครงการ:</b> ${escapeHTML(displayProjectNumber(p.id))}
     </div>
 
     <div class="detail-row">
