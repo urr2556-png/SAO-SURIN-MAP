@@ -245,7 +245,7 @@ footer {
 </header>
 
 <div class="toolbar">
-  <button class="green" onclick="newProject()">
+  <button class="green" onclick="newProject()" class="hidden" style="display:none">
     ➕ เพิ่มหมุดโครงการ
   </button>
 
@@ -265,7 +265,7 @@ footer {
 
   <button onclick="exportData()">💾 ส่งออก JSON</button>
 
-  <button onclick="document.getElementById('importFile').click()">
+  <button style="display:none" onclick="document.getElementById('importFile').click()">
     📂 นำเข้า JSON
   </button>
 
@@ -280,7 +280,8 @@ footer {
 
 <div id="map"></div>
 
-<div class="stats" id="stats"></div>
+<div class="stats" id="stats">กำลังโหลดข้อมูลจาก Supabase...</div>
+<div class="notice" id="syncStatus" role="status">กำลังเชื่อมต่อฐานข้อมูลออนไลน์...</div>
 
 <div class="notice">
   ⚠️ หมุดบนแผนที่เป็นตำแหน่งอ้างอิงเบื้องต้น
@@ -640,44 +641,43 @@ const initialProjects = [
    จัดการข้อมูล
 ========================================== */
 
-const STORAGE_KEY = "SAO_SURIN_MAP_2570_V4";
-
-function loadProjects() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-
-    if (saved) {
-      const parsed = JSON.parse(saved);
-
-      if (Array.isArray(parsed)) {
-        return parsed;
-      }
-    }
-  } catch (error) {
-    console.warn("ไม่สามารถอ่านข้อมูลเดิม", error);
-  }
-
-  return structuredClone(initialProjects);
-}
-
-let projects = loadProjects();
-
+// แสดงข้อมูลจาก Supabase เป็นแหล่งข้อมูลหลัก (อ่านอย่างเดียว)
+// Publishable key ใช้ในเว็บสาธารณะได้ แต่ต้องควบคุมสิทธิ์ด้วย RLS
+const SUPABASE_URL = "https://slgdrlgzfxuyuetsvbqh.supabase.co";
+const SUPABASE_KEY = "sb_publishable_rNguXyOEKArFGQgy4pyXnQ_eWHl8orR";
+let projects = [];
 let editingId = null;
 let editingPhotos = [];
 
 function persist() {
+  alert("เว็บไซต์นี้อยู่ในโหมดอ่านอย่างเดียว ข้อมูลต้องแก้ไขผ่านระบบที่ยืนยันตัวตน");
+  return false;
+}
+
+async function loadOnlineProjects() {
+  const status = document.getElementById("syncStatus");
   try {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(projects)
+    const response = await fetch(
+      SUPABASE_URL + "/rest/v1/surin_map_projects?select=id,data&order=id.asc&limit=1000",
+      {
+        headers: {
+          "apikey": SUPABASE_KEY,
+          "Accept": "application/json"
+        },
+        cache: "no-store"
+      }
     );
-    return true;
+    if (!response.ok) throw new Error("HTTP " + response.status + " — " + (await response.text()).slice(0, 180));
+    const rows = await response.json();
+    if (!Array.isArray(rows)) throw new Error("รูปแบบข้อมูลไม่ถูกต้อง");
+    projects = rows.map(row => ({ ...row.data, id: Number(row.data?.id ?? row.id), photos: Array.isArray(row.data?.photos) ? row.data.photos : [] }));
+    render();
+    status.textContent = "🟢 เชื่อมต่อ Supabase สำเร็จ — โหลดข้อมูล " + projects.length + " โครงการ (อ่านอย่างเดียว)";
   } catch (error) {
-    alert(
-      "ไม่สามารถบันทึกข้อมูลในเบราว์เซอร์ได้ " +
-      "อาจเกิดจากพื้นที่จัดเก็บเต็ม โดยเฉพาะรูปภาพขนาดใหญ่"
-    );
-    return false;
+    projects = [];
+    render();
+    status.textContent = "🔴 ไม่สามารถโหลดข้อมูลจาก Supabase: " + error.message + " — กรุณาตรวจสอบการเชื่อมต่อและสิทธิ์ SELECT (RLS)";
+    console.error("Supabase load failed", error);
   }
 }
 
@@ -860,9 +860,7 @@ function showDetail(id) {
   html += `
     </div>
     <br>
-    <button onclick="editProject(${p.id})">
-      ✏️ แก้ไขข้อมูล / เปลี่ยนรูปภาพ
-    </button>
+
   `;
 
   document.getElementById("detailContent").innerHTML = html;
@@ -901,6 +899,9 @@ function closeImage() {
 ========================================== */
 
 function newProject() {
+  alert("โหมดอ่านอย่างเดียว: ยังไม่เปิดการแก้ไขข้อมูลออนไลน์");
+  return;
+
 
   editingId = null;
   editingPhotos = [];
@@ -940,6 +941,9 @@ function newProject() {
 ========================================== */
 
 function editProject(id) {
+  alert("โหมดอ่านอย่างเดียว: ยังไม่เปิดการแก้ไขข้อมูลออนไลน์");
+  return;
+
 
   const p = projects.find(x => x.id === id);
 
@@ -985,6 +989,9 @@ function closeEditor() {
 ========================================== */
 
 async function addPhotos(event) {
+  alert("โหมดอ่านอย่างเดียว: ยังไม่เปิดการแก้ไขข้อมูลออนไลน์");
+  return;
+
 
   const files = Array.from(event.target.files || []);
 
@@ -1050,6 +1057,9 @@ function renderEditPhotos() {
 ========================================== */
 
 function saveProject() {
+  alert("โหมดอ่านอย่างเดียว: ยังไม่เปิดการแก้ไขข้อมูลออนไลน์");
+  return;
+
 
   const name = document.getElementById("fName").value.trim();
   const latText = document.getElementById("fLat").value;
@@ -1117,6 +1127,9 @@ function saveProject() {
 ========================================== */
 
 function deleteProject() {
+  alert("โหมดอ่านอย่างเดียว: ยังไม่เปิดการแก้ไขข้อมูลออนไลน์");
+  return;
+
 
   if (editingId === null) return;
 
@@ -1169,6 +1182,9 @@ function exportData() {
 ========================================== */
 
 async function importData(event) {
+  alert("โหมดอ่านอย่างเดียว: ยังไม่เปิดการแก้ไขข้อมูลออนไลน์");
+  return;
+
 
   const file = event.target.files[0];
 
@@ -1247,6 +1263,7 @@ async function importData(event) {
 ========================================== */
 
 render();
+loadOnlineProjects();
 
 </script>
 
