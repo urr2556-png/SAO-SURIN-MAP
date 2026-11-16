@@ -204,7 +204,14 @@ input, select, textarea {
   align-items: center;
   font-weight: bold;
   font-size: 11px;
+  box-sizing: border-box;
+  white-space: nowrap;
+  overflow: hidden;
+  line-height: 1;
 }
+
+/* Prevent long IDs from overflowing marker icons, including older browser caches. */
+.leaflet-marker-icon.sao-numbered-marker { width:31px !important; height:31px !important; overflow:hidden !important; white-space:nowrap !important; }
 
 footer {
   text-align: center;
@@ -749,11 +756,13 @@ function displayProjectNumber(id) {
   return index >= 0 ? String(index+1).padStart(2,"0") : "?";
 }
 function markerIcon(number, color="#e83e8c") {
+  // Never display the database ID on a map marker.
+  const label = /^\d{1,3}$/.test(String(number)) ? String(number).padStart(2,"0") : "?";
   return L.divIcon({
-    className: "",
+    className: "sao-numbered-marker",
     html:
       '<div class="project-marker" style="background:'+ (/^#[0-9a-fA-F]{6}$/.test(color)?color:'#e83e8c') +'">' +
-      escapeHTML(String(number).padStart(2, "0")) +
+      escapeHTML(label) +
       "</div>",
     iconSize: [31, 31],
     iconAnchor: [15, 15]
