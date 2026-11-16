@@ -233,6 +233,19 @@ footer {
     height: 65vh;
   }
 }
+
+/* แผงข้อมูลเมื่อวางเมาส์บนหมุด */
+.leaflet-tooltip.sao-project-hover {
+  background: #fff; color: #17243b; border: 1px solid #ccd6e4;
+  border-radius: 12px; padding: 0; box-shadow: 0 8px 24px rgba(0,0,0,.22);
+  white-space: normal; max-width: min(370px, 85vw); min-width: 270px;
+  pointer-events: none;
+}
+.sao-hover-card { padding: 12px 14px; max-height: min(460px, 65vh); overflow-y: auto; font: 13px/1.5 Tahoma, sans-serif; }
+.sao-hover-title { font-weight: bold; font-size: 15px; color: #103d78; margin-bottom: 8px; overflow-wrap: anywhere; }
+.sao-hover-row { margin: 5px 0; overflow-wrap: anywhere; }
+.sao-hover-row strong { color: #253b59; }
+
 </style>
 </head>
 
@@ -769,6 +782,20 @@ function markerIcon(number, color="#e83e8c") {
   });
 }
 
+function projectHoverHTML(p) {
+  const rows = [
+    ["ตำบล", p.tambon], ["อำเภอ", p.district], ["จังหวัด", p.province || "สุรินทร์"],
+    ["หน่วยงาน", p.agency], ["งบประมาณ", p.budget],
+    ["สถานะไม่ใช้ประโยชน์", p.status], ["สถานะการตรวจสอบ", p.inspectionStatus],
+    ["สาเหตุ", p.cause], ["ผลกระทบ / ความเสียหาย", p.impact],
+    ["ข้อมูลอื่น ๆ", p.otherInfo || p.detail]
+  ];
+  const title = escapeHTML(p.name || "ไม่ระบุชื่อโครงการ");
+  return '<div class="sao-hover-card"><div class="sao-hover-title">📍 '+title+'</div>' +
+    rows.map(([label, value]) => '<div class="sao-hover-row"><strong>'+escapeHTML(label)+':</strong> '+
+      escapeHTML(String(value ?? '').trim() || 'ยังไม่ระบุ')+'</div>').join('') + '</div>';
+}
+
 function render() {
 
   markerLayer.clearLayers();
@@ -809,8 +836,8 @@ function render() {
     marker.on("click", () => showDetail(p.id));
 
     marker.bindTooltip(
-      escapeHTML(p.name),
-      { direction: "top" }
+      projectHoverHTML(p),
+      { direction: "top", className: "sao-project-hover", opacity: 1, offset: [0, -8] }
     );
 
     markerLayer.addLayer(marker);
