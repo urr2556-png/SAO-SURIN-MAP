@@ -204,7 +204,14 @@ input, select, textarea {
   align-items: center;
   font-weight: bold;
   font-size: 11px;
+  box-sizing: border-box;
+  white-space: nowrap;
+  overflow: hidden;
+  line-height: 1;
 }
+
+/* Prevent long IDs from overflowing marker icons, including older browser caches. */
+.leaflet-marker-icon.sao-numbered-marker { width:31px !important; height:31px !important; overflow:hidden !important; white-space:nowrap !important; }
 
 footer {
   text-align: center;
@@ -226,6 +233,19 @@ footer {
     height: 65vh;
   }
 }
+
+/* แผงข้อมูลเมื่อวางเมาส์บนหมุด */
+.leaflet-tooltip.sao-project-hover {
+  background: #fff; color: #17243b; border: 1px solid #ccd6e4;
+  border-radius: 12px; padding: 0; box-shadow: 0 8px 24px rgba(0,0,0,.22);
+  white-space: normal; max-width: min(370px, 85vw); min-width: 270px;
+  pointer-events: none;
+}
+.sao-hover-card { padding: 12px 14px; max-height: min(460px, 65vh); overflow-y: auto; font: 13px/1.5 Tahoma, sans-serif; }
+.sao-hover-title { font-weight: bold; font-size: 15px; color: #103d78; margin-bottom: 8px; overflow-wrap: anywhere; }
+.sao-hover-row { margin: 5px 0; overflow-wrap: anywhere; }
+.sao-hover-row strong { color: #253b59; }
+
 </style>
 </head>
 
@@ -245,7 +265,7 @@ footer {
 </header>
 
 <div class="toolbar">
-  <button class="green" onclick="newProject()" class="hidden" style="display:none">
+  <button class="green" onclick="newProject()">
     ➕ เพิ่มหมุดโครงการ
   </button>
 
@@ -253,9 +273,12 @@ footer {
     <option value="">ทุกสถานะ</option>
     <option value="แก้ไขแล้ว">แก้ไขและใช้ประโยชน์แล้ว</option>
     <option value="กำลังแก้ไข">อยู่ระหว่างแก้ไข</option>
-    <option value="ติดตาม">อยู่ระหว่างติดตาม</option>
+    <option value="ยังไม่ดำเนินการแก้ไข">ยังไม่ดำเนินการแก้ไข</option>
+    <option value="ติดตาม">อยู่ระหว่างติดตาม (ข้อมูลเดิม)</option>
     <option value="วางแผน">วางแผนตรวจสอบ</option>
   </select>
+
+  <select id="inspectionFilter" onchange="render()"><option value="">ทุกสถานะการตรวจสอบ</option><option value="ตรวจสอบเบื้องต้น">ตรวจสอบเบื้องต้น</option><option value="อยู่ระหว่างตรวจสอบ">อยู่ระหว่างตรวจสอบ</option><option value="ตรวจสอบแล้วเสร็จ 100%">ตรวจสอบแล้วเสร็จ 100%</option><option value="อยู่ระหว่างติดตามผล">อยู่ระหว่างติดตามผล</option><option value="อยู่ระหว่างดำเนินการวินัย">อยู่ระหว่างดำเนินการวินัย</option><option value="อยู่ระหว่างดำเนินการอาญา">อยู่ระหว่างดำเนินการอาญา</option><option value="อยู่ระหว่างดำเนินการปกครอง">อยู่ระหว่างดำเนินการปกครอง</option></select>
 
   <input
     id="search"
@@ -265,7 +288,7 @@ footer {
 
   <button onclick="exportData()">💾 ส่งออก JSON</button>
 
-  <button style="display:none" onclick="document.getElementById('importFile').click()">
+  <button class="hidden" onclick="document.getElementById('importFile').click()">
     📂 นำเข้า JSON
   </button>
 
@@ -278,10 +301,11 @@ footer {
   >
 </div>
 
+<div id="syncStatus" class="notice" role="status">กำลังเชื่อมต่อฐานข้อมูล...</div>
 <div id="map"></div>
 
-<div class="stats" id="stats">กำลังโหลดข้อมูลจาก Supabase...</div>
-<div class="notice" id="syncStatus" role="status">กำลังเชื่อมต่อฐานข้อมูลออนไลน์...</div>
+<div class="stats" id="stats"></div>
+<div class="stats" id="summary"></div>
 
 <div class="notice">
   ⚠️ หมุดบนแผนที่เป็นตำแหน่งอ้างอิงเบื้องต้น
@@ -325,7 +349,8 @@ footer {
       <select id="fStatus">
         <option value="แก้ไขแล้ว">แก้ไขและใช้ประโยชน์แล้ว</option>
         <option value="กำลังแก้ไข">อยู่ระหว่างแก้ไข</option>
-        <option value="ติดตาม">อยู่ระหว่างติดตาม</option>
+        <option value="ยังไม่ดำเนินการแก้ไข">ยังไม่ดำเนินการแก้ไข</option>
+    <option value="ติดตาม">อยู่ระหว่างติดตาม (ข้อมูลเดิม)</option>
         <option value="วางแผน">วางแผนตรวจสอบ</option>
       </select>
     </div>
@@ -340,10 +365,33 @@ footer {
       <input id="fLng" type="number" step="any">
     </div>
 
+    <div class="field"><label>สีหมุด</label><input id="fColor" type="color" value="#e83e8c"></div>
+    <div class="field full"><button type="button" onclick="startPickLocation()">📍 เลือกตำแหน่งบนแผนที่ / ลากหมุด</button><small>กดปุ่มแล้วคลิกบนแผนที่เพื่อเลือกพิกัด หรือเลื่อนหมุดชั่วคราว</small></div>
     <div class="field full">
       <label>รายละเอียดเพิ่มเติม</label>
       <textarea id="fDetail"></textarea>
     </div>
+
+
+    <h3 class="field full">📋 ข้อมูลโครงการ / งบประมาณ / ผลการตรวจสอบ</h3>
+    <div class="field full"><label>ที่มางบประมาณ</label><textarea id="fBudgetSource" rows="3"></textarea></div>
+    <div class="field full"><label>หน่วยงานจัดสรรงบประมาณ</label><input id="fBudgetAgency" type="text"></div>
+    <div class="field full"><label>ที่มาโครงการ</label><textarea id="fProjectOrigin" rows="3"></textarea></div>
+    <div class="field full"><label>เลขที่สัญญา</label><input id="fContractNumber" type="text"></div>
+    <div class="field full"><label>ผู้รับจ้าง</label><input id="fContractor" type="text"></div>
+    <div class="field full"><label>ปีงบประมาณ</label><input id="fFiscalYear" type="text"></div>
+    <div class="field full"><label>วันที่เริ่มสัญญา</label><input id="fStartDate" type="date"></div>
+    <div class="field full"><label>วันที่สิ้นสุดสัญญา</label><input id="fEndDate" type="date"></div>
+    <div class="field full"><label>สถานะการตรวจสอบ</label><select id="fInspectionStatus"><option value="">— ยังไม่ระบุ —</option><option value="ตรวจสอบเบื้องต้น">ตรวจสอบเบื้องต้น</option><option value="อยู่ระหว่างตรวจสอบ">อยู่ระหว่างตรวจสอบ</option><option value="ตรวจสอบแล้วเสร็จ 100%">ตรวจสอบแล้วเสร็จ 100%</option><option value="อยู่ระหว่างติดตามผล">อยู่ระหว่างติดตามผล</option><option value="อยู่ระหว่างดำเนินการวินัย">อยู่ระหว่างดำเนินการวินัย</option><option value="อยู่ระหว่างดำเนินการอาญา">อยู่ระหว่างดำเนินการอาญา</option><option value="อยู่ระหว่างดำเนินการปกครอง">อยู่ระหว่างดำเนินการปกครอง</option></select></div>
+    <div class="field full"><label>ข้อมูลโครงการอื่น ๆ</label><textarea id="fOtherInfo" rows="3"></textarea></div>
+    <div class="field full"><label>สาเหตุที่โครงการไม่สามารถใช้ประโยชน์ได้</label><textarea id="fCause" rows="3"></textarea></div>
+    <div class="field full"><label>ผลกระทบ / ความเสียหาย</label><textarea id="fImpact" rows="3"></textarea></div>
+    <div class="field full"><label>มูลค่าความเสียหาย (บาท)</label><input id="fDamageAmount" type="number" min="0" step="any"></div>
+    <div class="field full"><label>ประชาชนที่ได้รับผลกระทบ (คน/ครัวเรือน)</label><input id="fAffectedPeople" type="number" min="0" step="any"></div>
+    <div class="field full"><label>พื้นที่ได้รับผลกระทบ</label><textarea id="fAffectedArea" rows="3"></textarea></div>
+    <div class="field full"><label>วันที่พบความเสียหาย</label><input id="fDamageDate" type="date"></div>
+    <div class="field full"><label>สถานะการยืนยันความเสียหาย</label><select id="fDamageVerification"><option value="">— ยังไม่ระบุ —</option><option value="ข้อมูลที่ประชาชนแจ้ง">ข้อมูลที่ประชาชนแจ้ง</option><option value="อยู่ระหว่างประเมิน">อยู่ระหว่างประเมิน</option><option value="ตรวจสอบยืนยันแล้ว">ตรวจสอบยืนยันแล้ว</option></select></div>
+    <div class="field full"><label>ลิงก์ Google Maps (ไม่บังคับ)</label><input id="fMapUrl" type="text"></div>
 
     <div class="field full">
       <label>เพิ่มหรือเปลี่ยนรูปภาพ</label>
@@ -355,6 +403,8 @@ footer {
         onchange="addPhotos(event)"
       >
       <div id="editPhotos" class="photo-grid"></div>
+    </div>
+    <div class="field full"><label>📎 แนบเอกสาร PDF / Word / Excel</label><input id="fFiles" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx" multiple onchange="addFiles(event)"><div id="editFiles"></div>
     </div>
 
   </div>
@@ -641,46 +691,38 @@ const initialProjects = [
    จัดการข้อมูล
 ========================================== */
 
-// แสดงข้อมูลจาก Supabase เป็นแหล่งข้อมูลหลัก (อ่านอย่างเดียว)
-// Publishable key ใช้ในเว็บสาธารณะได้ แต่ต้องควบคุมสิทธิ์ด้วย RLS
 const SUPABASE_URL = "https://slgdrlgzfxuyuetsvbqh.supabase.co";
 const SUPABASE_KEY = "sb_publishable_rNguXyOEKArFGQgy4pyXnQ_eWHl8orR";
-let projects = [];
-let editingId = null;
-let editingPhotos = [];
-
-function persist() {
-  alert("เว็บไซต์นี้อยู่ในโหมดอ่านอย่างเดียว ข้อมูลต้องแก้ไขผ่านระบบที่ยืนยันตัวตน");
-  return false;
-}
-
+const BUCKET = "surin-map-media";
+let projects = [], editingId = null, editingPhotos = [], editingFiles = [];
+let pickingLocation = false, temporaryMarker = null, busy = false;
+const apiHeaders = { "apikey": SUPABASE_KEY };
+function syncMessage(message) { document.getElementById("syncStatus").textContent = message; }
 async function loadOnlineProjects() {
-  const status = document.getElementById("syncStatus");
   try {
-    const response = await fetch(
-      SUPABASE_URL + "/rest/v1/surin_map_projects?select=id,data&order=id.asc&limit=1000",
-      {
-        headers: {
-          "apikey": SUPABASE_KEY,
-          "Accept": "application/json"
-        },
-        cache: "no-store"
-      }
-    );
-    if (!response.ok) throw new Error("HTTP " + response.status + " — " + (await response.text()).slice(0, 180));
+    const response = await fetch(SUPABASE_URL + "/rest/v1/surin_map_projects?select=id,data&order=id.asc&limit=1000", {headers:apiHeaders,cache:"no-store"});
+    if (!response.ok) throw Error("HTTP " + response.status + ": " + (await response.text()).slice(0,200));
     const rows = await response.json();
-    if (!Array.isArray(rows)) throw new Error("รูปแบบข้อมูลไม่ถูกต้อง");
-    projects = rows.map(row => ({ ...row.data, id: Number(row.data?.id ?? row.id), photos: Array.isArray(row.data?.photos) ? row.data.photos : [] }));
-    render();
-    status.textContent = "🟢 เชื่อมต่อ Supabase สำเร็จ — โหลดข้อมูล " + projects.length + " โครงการ (อ่านอย่างเดียว)";
-  } catch (error) {
-    projects = [];
-    render();
-    status.textContent = "🔴 ไม่สามารถโหลดข้อมูลจาก Supabase: " + error.message + " — กรุณาตรวจสอบการเชื่อมต่อและสิทธิ์ SELECT (RLS)";
-    console.error("Supabase load failed", error);
-  }
+    projects = rows.map(row => ({...row.data, id:Number(row.data?.id ?? row.id), photos:Array.isArray(row.data?.photos)?row.data.photos:[], files:Array.isArray(row.data?.files)?row.data.files:[]}));
+    render();syncMessage("🟢 เชื่อมต่อ Supabase — " + projects.length + " โครงการ");
+  } catch(e) {syncMessage("🔴 โหลดข้อมูลไม่สำเร็จ: " + e.message);console.error(e);}
 }
-
+async function writeProject(data, isNew) {
+  const endpoint = SUPABASE_URL + "/rest/v1/surin_map_projects" + (isNew?"":"?id=eq."+encodeURIComponent(String(data.id)));
+  const response = await fetch(endpoint,{method:isNew?"POST":"PATCH",headers:{...apiHeaders,"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(isNew?{id:String(data.id),data}:{data})});
+  if (!response.ok) throw Error("บันทึกฐานข้อมูลไม่สำเร็จ HTTP "+response.status+": "+(await response.text()).slice(0,260));
+  const rows=await response.json();if(!rows.length) throw Error("ไม่มีแถวข้อมูลถูกบันทึก กรุณาตรวจสอบสิทธิ์ RLS");
+}
+async function uploadMedia(file) {
+  const allowed = ["image/jpeg","image/png","image/webp","application/pdf","application/msword","application/vnd.openxmlformats-officedocument.wordprocessingml.document","application/vnd.ms-excel","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"];
+  if(!allowed.includes(file.type)) throw Error("ชนิดไฟล์ไม่รองรับ: "+file.name);
+  if(file.size>10*1024*1024) throw Error("ไฟล์เกิน 10 MB: "+file.name);
+  const ext=(file.name.split(".").pop()||"bin").toLowerCase();
+  const path="projects/"+crypto.randomUUID()+"."+ext;
+  const res=await fetch(SUPABASE_URL+"/storage/v1/object/"+BUCKET+"/"+path,{method:"POST",headers:{...apiHeaders,"Content-Type":file.type,"x-upsert":"false"},body:file});
+  if(!res.ok) throw Error("อัปโหลด "+file.name+" ไม่สำเร็จ: "+(await res.text()).slice(0,200));
+  return {name:file.name,url:SUPABASE_URL+"/storage/v1/object/public/"+BUCKET+"/"+path};
+}
 function escapeHTML(value) {
   return String(value ?? "").replace(/[&<>"']/g, function(c) {
     return {
@@ -721,16 +763,39 @@ L.tileLayer(
 
 const markerLayer = L.layerGroup().addTo(map);
 
-function markerIcon(number) {
+// หมายเลขบนหมุดเป็นเลขลำดับสำหรับแสดงผล ไม่ใช่รหัสฐานข้อมูล
+// เก็บ ID เดิมไว้เสมอ เพื่อไม่ให้กระทบการแก้ไขและข้อมูล 19 โครงการ
+function displayProjectNumber(id) {
+  const ordered = [...projects].sort((a,b) => Number(a.id)-Number(b.id));
+  const index = ordered.findIndex(p => String(p.id) === String(id));
+  return index >= 0 ? String(index+1).padStart(2,"0") : "?";
+}
+function markerIcon(number, color="#e83e8c") {
+  // Never display the database ID on a map marker.
+  const label = /^\d{1,3}$/.test(String(number)) ? String(number).padStart(2,"0") : "?";
   return L.divIcon({
-    className: "",
+    className: "sao-numbered-marker",
     html:
-      '<div class="project-marker">' +
-      escapeHTML(String(number).padStart(2, "0")) +
+      '<div class="project-marker" style="background:'+ (/^#[0-9a-fA-F]{6}$/.test(color)?color:'#e83e8c') +'">' +
+      escapeHTML(label) +
       "</div>",
     iconSize: [31, 31],
     iconAnchor: [15, 15]
   });
+}
+
+function projectHoverHTML(p) {
+  const rows = [
+    ["ตำบล", p.tambon], ["อำเภอ", p.district], ["จังหวัด", p.province || "สุรินทร์"],
+    ["หน่วยงาน", p.agency], ["งบประมาณ", p.budget],
+    ["สถานะไม่ใช้ประโยชน์", p.status], ["สถานะการตรวจสอบ", p.inspectionStatus],
+    ["สาเหตุ", p.cause], ["ผลกระทบ / ความเสียหาย", p.impact],
+    ["ข้อมูลอื่น ๆ", p.otherInfo || p.detail]
+  ];
+  const title = escapeHTML(p.name || "ไม่ระบุชื่อโครงการ");
+  return '<div class="sao-hover-card"><div class="sao-hover-title">📍 '+title+'</div>' +
+    rows.map(([label, value]) => '<div class="sao-hover-row"><strong>'+escapeHTML(label)+':</strong> '+
+      escapeHTML(String(value ?? '').trim() || 'ยังไม่ระบุ')+'</div>').join('') + '</div>';
 }
 
 function render() {
@@ -738,6 +803,7 @@ function render() {
   markerLayer.clearLayers();
 
   const filter = document.getElementById("statusFilter").value;
+  const inspectionFilter = document.getElementById("inspectionFilter").value;
   const search = document.getElementById("search").value
     .trim()
     .toLowerCase();
@@ -752,10 +818,10 @@ function render() {
       p.district,
       p.agency,
       p.budget,
-      p.detail
+      p.detail, p.projectOrigin, p.budgetSource, p.cause, p.impact, p.inspectionStatus
     ].join(" ").toLowerCase();
 
-    return matchesStatus && text.includes(search);
+    return matchesStatus && (!inspectionFilter || p.inspectionStatus === inspectionFilter) && text.includes(search);
   });
 
   filtered.forEach(p => {
@@ -765,20 +831,26 @@ function render() {
     const marker = L.marker(
       [Number(p.lat), Number(p.lng)],
       {
-        icon: markerIcon(p.id)
+        icon: markerIcon(displayProjectNumber(p.id),p.color)
       }
     );
 
     marker.on("click", () => showDetail(p.id));
 
     marker.bindTooltip(
-      escapeHTML(p.name),
-      { direction: "top" }
+      projectHoverHTML(p),
+      { direction: "top", className: "sao-project-hover", opacity: 1, offset: [0, -8] }
     );
 
     markerLayer.addLayer(marker);
   });
 
+  const totals = {};
+  projects.forEach(p=>{const key=p.status||"ไม่ระบุ";totals[key]=(totals[key]||0)+1;});
+  const budgets=projects.map(p=>{const t=String(p.budget||"").replace(/,/g,"");const m=t.match(/(\d+(?:\.\d+)?)/);if(!m)return null;const n=Number(m[1]);if(/ล้าน/.test(t))return n*1e6;if(/พันล้าน/.test(t))return n*1e9;if(/บาท/.test(t))return n;return null;}).filter(x=>x!==null);
+  document.getElementById("summary").textContent="📊 สรุปสถานะ: "+Object.entries(totals).map(([k,v])=>k+" "+v).join(" | ")+" | 💰 วงเงินที่ระบุเป็นตัวเลข (ประมาณ): "+(budgets.reduce((a,b)=>a+b,0)/1e6).toLocaleString("th-TH",{maximumFractionDigits:2})+" ล้านบาท ("+budgets.length+" โครงการ)";
+  const checks={};projects.forEach(p=>{if(p.inspectionStatus)checks[p.inspectionStatus]=(checks[p.inspectionStatus]||0)+1;});
+  document.getElementById("summary").textContent += " | 🔎 สถานะการตรวจสอบ: "+(Object.entries(checks).map(([k,v])=>k+" "+v).join(" | ")||"ยังไม่ระบุ");
   document.getElementById("stats").textContent =
     "📍 แสดง " + filtered.length +
     " โครงการ จากทั้งหมด " + projects.length + " โครงการ";
@@ -787,6 +859,25 @@ function render() {
 /* ==========================================
    แสดงรายละเอียดเมื่อคลิกหมุด
 ========================================== */
+
+
+const EXTRA_FIELDS = [("budgetSource", "ที่มางบประมาณ"), ("budgetAgency", "หน่วยงานจัดสรรงบประมาณ"), ("projectOrigin", "ที่มาโครงการ"), ("contractNumber", "เลขที่สัญญา"), ("contractor", "ผู้รับจ้าง"), ("fiscalYear", "ปีงบประมาณ"), ("startDate", "วันที่เริ่มสัญญา"), ("endDate", "วันที่สิ้นสุดสัญญา"), ("inspectionStatus", "สถานะการตรวจสอบ"), ("otherInfo", "ข้อมูลโครงการอื่น ๆ"), ("cause", "สาเหตุที่โครงการไม่สามารถใช้ประโยชน์ได้"), ("impact", "ผลกระทบ / ความเสียหาย"), ("damageAmount", "มูลค่าความเสียหาย (บาท)"), ("affectedPeople", "ประชาชนที่ได้รับผลกระทบ (คน/ครัวเรือน)"), ("affectedArea", "พื้นที่ได้รับผลกระทบ"), ("damageDate", "วันที่พบความเสียหาย"), ("damageVerification", "สถานะการยืนยันความเสียหาย"), ("mapUrl", "ลิงก์ Google Maps (ไม่บังคับ)")];
+function extraDetailRows(p){
+  return EXTRA_FIELDS.filter(([key])=>key!=="mapUrl" && p[key]!==undefined && p[key]!==null && String(p[key]).trim()!=="")
+    .map(([key,label])=>`<div class="detail-row"><b>${escapeHTML(label)}:</b> ${escapeHTML(p[key])}</div>`).join("");
+}
+function projectMapsUrl(p){
+  const custom=String(p.mapUrl||"").trim();
+  try { const u=new URL(custom);if(u.protocol==="https:" && (u.hostname==="google.com"||u.hostname.endsWith(".google.com")||u.hostname==="maps.app.goo.gl"||u.hostname==="goo.gl"))return u.href; }catch(e){}
+  if(!validCoordinate(p.lat,p.lng))return "";
+  return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(p.lat+","+p.lng);
+}
+function mapButtons(p){
+  const url=projectMapsUrl(p);if(!url)return "";
+  const nav="https://www.google.com/maps/dir/?api=1&destination="+encodeURIComponent(p.lat+","+p.lng);
+  return `<a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer">🗺️ เปิด Google Maps</a> &nbsp; <a href="${escapeHTML(nav)}" target="_blank" rel="noopener noreferrer">🚗 นำทาง</a> &nbsp; <button type="button" onclick="copyMapLink(${Number(p.id)})">🔗 คัดลอกลิงก์</button>`;
+}
+async function copyMapLink(id){const p=projects.find(x=>x.id===id);if(!p)return;const url=projectMapsUrl(p);try{await navigator.clipboard.writeText(url);alert("คัดลอกลิงก์แล้ว");}catch(e){prompt("คัดลอกลิงก์นี้",url);}}
 
 function showDetail(id) {
 
@@ -798,7 +889,7 @@ function showDetail(id) {
     <h2>📍 ${escapeHTML(p.name)}</h2>
 
     <div class="detail-row">
-      <b>หมายเลขโครงการ:</b> ${escapeHTML(p.id)}
+      <b>หมายเลขโครงการ:</b> ${escapeHTML(displayProjectNumber(p.id))}
     </div>
 
     <div class="detail-row">
@@ -837,6 +928,9 @@ function showDetail(id) {
       <b>ลองจิจูด:</b> ${escapeHTML(p.lng)}
     </div>
 
+    ${extraDetailRows(p)}
+    <div class="detail-row">${mapButtons(p)}</div>
+
     <h3>🖼️ ภาพประกอบโครงการ</h3>
     <div class="photo-grid">
   `;
@@ -852,15 +946,18 @@ function showDetail(id) {
       <img
         src="${escapeHTML(photo)}"
         alt="ภาพโครงการ ${index + 1}"
-        onclick="showImageByIndex(${p.id}, ${index})"
+        onclick="showImageByIndex(${Number(p.id)}, ${index})"
       >
     `;
   });
 
+  html += `</div><h3>📎 เอกสารแนบ</h3>`;
+  (p.files||[]).forEach(f=>{if(f&&/^https:\/\//.test(f.url||""))html+=`<div class="detail-row"><a href="${escapeHTML(f.url)}" target="_blank" rel="noopener noreferrer">📄 ${escapeHTML(f.name||"ไฟล์แนบ")}</a></div>`;});
   html += `
-    </div>
     <br>
-
+    <button onclick="editProject(${p.id})">
+      ✏️ แก้ไขข้อมูล / เปลี่ยนรูปภาพ
+    </button>
   `;
 
   document.getElementById("detailContent").innerHTML = html;
@@ -899,12 +996,9 @@ function closeImage() {
 ========================================== */
 
 function newProject() {
-  alert("โหมดอ่านอย่างเดียว: ยังไม่เปิดการแก้ไขข้อมูลออนไลน์");
-  return;
-
 
   editingId = null;
-  editingPhotos = [];
+  editingPhotos = [];editingFiles = [];
 
   document.getElementById("editorTitle").textContent =
     "➕ เพิ่มโครงการใหม่";
@@ -922,12 +1016,15 @@ function newProject() {
     document.getElementById(id).value = "";
   });
 
+  document.getElementById("fBudgetSource").value="";document.getElementById("fBudgetAgency").value="";document.getElementById("fProjectOrigin").value="";document.getElementById("fContractNumber").value="";document.getElementById("fContractor").value="";document.getElementById("fFiscalYear").value="";document.getElementById("fStartDate").value="";document.getElementById("fEndDate").value="";document.getElementById("fInspectionStatus").value="";document.getElementById("fOtherInfo").value="";document.getElementById("fCause").value="";document.getElementById("fImpact").value="";document.getElementById("fDamageAmount").value="";document.getElementById("fAffectedPeople").value="";document.getElementById("fAffectedArea").value="";document.getElementById("fDamageDate").value="";document.getElementById("fDamageVerification").value="";document.getElementById("fMapUrl").value="";
   document.getElementById("fStatus").value = "วางแผน";
+  document.getElementById("fColor").value = "#e83e8c";
+  document.getElementById("fPhotos").value="";document.getElementById("fFiles").value="";
 
   document.getElementById("deleteButton")
     .classList.add("hidden");
 
-  renderEditPhotos();
+  renderEditPhotos();renderEditFiles();
 
   document.getElementById("editor")
     .classList.remove("hidden");
@@ -941,9 +1038,6 @@ function newProject() {
 ========================================== */
 
 function editProject(id) {
-  alert("โหมดอ่านอย่างเดียว: ยังไม่เปิดการแก้ไขข้อมูลออนไลน์");
-  return;
-
 
   const p = projects.find(x => x.id === id);
 
@@ -952,7 +1046,7 @@ function editProject(id) {
   closeDetail();
 
   editingId = id;
-  editingPhotos = [...(p.photos || [])];
+  editingPhotos = [...(p.photos || [])];editingFiles=[...(p.files||[])];
 
   document.getElementById("editorTitle").textContent =
     "✏️ แก้ไขโครงการหมายเลข " + id;
@@ -964,13 +1058,15 @@ function editProject(id) {
   document.getElementById("fBudget").value = p.budget || "";
   document.getElementById("fStatus").value = p.status || "วางแผน";
   document.getElementById("fDetail").value = p.detail || "";
+  document.getElementById("fBudgetSource").value=p.budgetSource??"";document.getElementById("fBudgetAgency").value=p.budgetAgency??"";document.getElementById("fProjectOrigin").value=p.projectOrigin??"";document.getElementById("fContractNumber").value=p.contractNumber??"";document.getElementById("fContractor").value=p.contractor??"";document.getElementById("fFiscalYear").value=p.fiscalYear??"";document.getElementById("fStartDate").value=p.startDate??"";document.getElementById("fEndDate").value=p.endDate??"";document.getElementById("fInspectionStatus").value=p.inspectionStatus??"";document.getElementById("fOtherInfo").value=p.otherInfo??"";document.getElementById("fCause").value=p.cause??"";document.getElementById("fImpact").value=p.impact??"";document.getElementById("fDamageAmount").value=p.damageAmount??"";document.getElementById("fAffectedPeople").value=p.affectedPeople??"";document.getElementById("fAffectedArea").value=p.affectedArea??"";document.getElementById("fDamageDate").value=p.damageDate??"";document.getElementById("fDamageVerification").value=p.damageVerification??"";document.getElementById("fMapUrl").value=p.mapUrl??"";
+  document.getElementById("fColor").value = /^#[0-9a-fA-F]{6}$/.test(p.color||"")?p.color:"#e83e8c";
   document.getElementById("fLat").value = p.lat ?? "";
   document.getElementById("fLng").value = p.lng ?? "";
 
   document.getElementById("deleteButton")
-    .classList.remove("hidden");
+    .classList.add("hidden"); // ลบได้เฉพาะผู้ดูแลผ่านระบบยืนยันตัวตน (ยังไม่เปิดใช้)
 
-  renderEditPhotos();
+  renderEditPhotos();renderEditFiles();
 
   document.getElementById("editor")
     .classList.remove("hidden");
@@ -989,166 +1085,49 @@ function closeEditor() {
 ========================================== */
 
 async function addPhotos(event) {
-  alert("โหมดอ่านอย่างเดียว: ยังไม่เปิดการแก้ไขข้อมูลออนไลน์");
-  return;
-
-
-  const files = Array.from(event.target.files || []);
-
-  for (const file of files) {
-
-    if (!file.type.startsWith("image/")) continue;
-
-    if (file.size > 3 * 1024 * 1024) {
-      alert("รูปภาพต้องมีขนาดไม่เกิน 3 MB ต่อไฟล์");
-      continue;
-    }
-
-    const data = await new Promise((resolve, reject) => {
-
-      const reader = new FileReader();
-
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = () => reject(reader.error);
-
-      reader.readAsDataURL(file);
-    });
-
-    editingPhotos.push(data);
-  }
-
-  event.target.value = "";
-
-  renderEditPhotos();
+  const files=Array.from(event.target.files||[]);
+  for(const f of files){if(!["image/jpeg","image/png","image/webp"].includes(f.type)||f.size>10*1024*1024){alert("รองรับ JPG/PNG/WebP ไม่เกิน 10 MB");continue;}editingPhotos.push({pending:f,preview:URL.createObjectURL(f)});}
+  event.target.value="";renderEditPhotos();
 }
 
-function renderEditPhotos() {
-
-  const box = document.getElementById("editPhotos");
-
-  box.innerHTML = "";
-
-  editingPhotos.forEach((photo, index) => {
-
-    const div = document.createElement("div");
-    div.className = "photo-item";
-
-    const img = document.createElement("img");
-    img.src = photo;
-    img.alt = "ภาพประกอบโครงการ";
-
-    const button = document.createElement("button");
-    button.textContent = "ลบ";
-
-    button.onclick = () => {
-      editingPhotos.splice(index, 1);
-      renderEditPhotos();
-    };
-
-    div.appendChild(img);
-    div.appendChild(button);
-
-    box.appendChild(div);
-  });
+function renderEditPhotos(){
+  const box=document.getElementById("editPhotos");box.innerHTML="";
+  editingPhotos.forEach((photo,i)=>{const div=document.createElement("div");div.className="photo-item";const img=document.createElement("img");img.src=typeof photo==="string"?photo:photo.preview;const btn=document.createElement("button");btn.textContent="เอาออก";btn.onclick=()=>{editingPhotos.splice(i,1);renderEditPhotos();};div.append(img,btn);box.append(div);});
 }
+function addFiles(event){for(const f of event.target.files||[])editingFiles.push({pending:f});event.target.value="";renderEditFiles();}
+function renderEditFiles(){const box=document.getElementById("editFiles");box.innerHTML="";editingFiles.forEach((f,i)=>{const d=document.createElement("div");d.className="detail-row";d.textContent="📄 "+(f.name||"ไฟล์แนบ")+" ";const b=document.createElement("button");b.textContent="เอาออก";b.onclick=()=>{editingFiles.splice(i,1);renderEditFiles();};d.append(b);box.append(d);});}
+function startPickLocation(){pickingLocation=true;syncMessage("📍 คลิกตำแหน่งบนแผนที่เพื่อเลือกพิกัด จากนั้นลากหมุดปรับละเอียดได้");document.getElementById("map").scrollIntoView({behavior:"smooth"});if(temporaryMarker)map.removeLayer(temporaryMarker);}
+function placeTemporary(latlng){document.getElementById("fLat").value=latlng.lat.toFixed(6);document.getElementById("fLng").value=latlng.lng.toFixed(6);if(temporaryMarker)map.removeLayer(temporaryMarker);temporaryMarker=L.marker(latlng,{draggable:true}).addTo(map);temporaryMarker.on("dragend",()=>{const p=temporaryMarker.getLatLng();document.getElementById("fLat").value=p.lat.toFixed(6);document.getElementById("fLng").value=p.lng.toFixed(6);});}
+map.on("click",e=>{if(pickingLocation){placeTemporary(e.latlng);pickingLocation=false;syncMessage("📍 เลือกพิกัดแล้ว กดบันทึกโครงการเมื่อพร้อม");}});
+
 
 /* ==========================================
    บันทึกโครงการ
 ========================================== */
 
-function saveProject() {
-  alert("โหมดอ่านอย่างเดียว: ยังไม่เปิดการแก้ไขข้อมูลออนไลน์");
-  return;
-
-
-  const name = document.getElementById("fName").value.trim();
-  const latText = document.getElementById("fLat").value;
-  const lngText = document.getElementById("fLng").value;
-
-  if (!name) {
-    alert("กรุณาระบุชื่อโครงการ");
-    return;
-  }
-
-  if (
-    latText === "" ||
-    lngText === "" ||
-    !validCoordinate(latText, lngText)
-  ) {
-    alert("กรุณาระบุพิกัดละติจูดและลองจิจูดที่ถูกต้อง");
-    return;
-  }
-
-  const oldProjects = structuredClone(projects);
-
-  const id = editingId === null
-    ? Math.max(0, ...projects.map(p => Number(p.id) || 0)) + 1
-    : editingId;
-
-  const data = {
-    id,
-    name,
-    tambon: document.getElementById("fTambon").value.trim(),
-    district: document.getElementById("fDistrict").value.trim(),
-    agency: document.getElementById("fAgency").value.trim(),
-    budget: document.getElementById("fBudget").value.trim(),
-    status: document.getElementById("fStatus").value,
-    detail: document.getElementById("fDetail").value.trim(),
-    lat: Number(latText),
-    lng: Number(lngText),
-    photos: [...editingPhotos]
-  };
-
-  if (editingId === null) {
-    projects.push(data);
-  } else {
-    const index = projects.findIndex(p => p.id === editingId);
-
-    if (index < 0) return;
-
-    projects[index] = data;
-  }
-
-  if (!persist()) {
-    projects = oldProjects;
-    return;
-  }
-
-  render();
-  closeEditor();
-
-  map.setView([data.lat, data.lng], 12);
-
-  alert("บันทึกโครงการเรียบร้อย");
+async function saveProject(){
+  if(busy)return;
+  const name=document.getElementById("fName").value.trim(),latText=document.getElementById("fLat").value,lngText=document.getElementById("fLng").value;
+  if(!name){alert("กรุณาระบุชื่อโครงการ");return;}
+  if(latText===""||lngText===""||!validCoordinate(latText,lngText)){alert("กรุณาระบุพิกัดให้ถูกต้อง");return;}
+  const isNew=editingId===null;
+  // รหัส UUID-like เพื่อหลีกเลี่ยงการชนกันเมื่อเพิ่มพร้อมกันหลายเครื่อง
+  const id=isNew?Number(Date.now().toString()+String(Math.floor(Math.random()*1000)).padStart(3,"0")):editingId;
+  const data={...(isNew?{}:projects.find(p=>p.id===editingId)||{}),id,name,tambon:document.getElementById("fTambon").value.trim(),district:document.getElementById("fDistrict").value.trim(),agency:document.getElementById("fAgency").value.trim(),budget:document.getElementById("fBudget").value.trim(),status:document.getElementById("fStatus").value,detail:document.getElementById("fDetail").value.trim(),lat:Number(latText),lng:Number(lngText),color:document.getElementById("fColor").value};
+  data.budgetSource=document.getElementById("fBudgetSource").value.trim();data.budgetAgency=document.getElementById("fBudgetAgency").value.trim();data.projectOrigin=document.getElementById("fProjectOrigin").value.trim();data.contractNumber=document.getElementById("fContractNumber").value.trim();data.contractor=document.getElementById("fContractor").value.trim();data.fiscalYear=document.getElementById("fFiscalYear").value.trim();data.startDate=document.getElementById("fStartDate").value.trim();data.endDate=document.getElementById("fEndDate").value.trim();data.inspectionStatus=document.getElementById("fInspectionStatus").value.trim();data.otherInfo=document.getElementById("fOtherInfo").value.trim();data.cause=document.getElementById("fCause").value.trim();data.impact=document.getElementById("fImpact").value.trim();data.damageAmount=document.getElementById("fDamageAmount").value.trim();data.affectedPeople=document.getElementById("fAffectedPeople").value.trim();data.affectedArea=document.getElementById("fAffectedArea").value.trim();data.damageDate=document.getElementById("fDamageDate").value.trim();data.damageVerification=document.getElementById("fDamageVerification").value.trim();data.mapUrl=document.getElementById("fMapUrl").value.trim();
+  busy=true;syncMessage("⏳ กำลังอัปโหลดและบันทึก กรุณารอ...");
+  try{
+    data.photos=[];for(const p of editingPhotos){if(typeof p==="string")data.photos.push(p);else if(p.pending){const r=await uploadMedia(p.pending);data.photos.push(r.url);}}
+    data.files=[];for(const f of editingFiles){if(f.pending)data.files.push(await uploadMedia(f.pending));else data.files.push(f);}
+    await writeProject(data,isNew);editingId=id;await loadOnlineProjects();closeEditor();if(temporaryMarker){map.removeLayer(temporaryMarker);temporaryMarker=null;}map.setView([data.lat,data.lng],12);alert("บันทึกออนไลน์สำเร็จ");
+  }catch(e){syncMessage("🔴 บันทึกไม่สำเร็จ: "+e.message);alert("บันทึกไม่สำเร็จ: "+e.message);console.error(e);}finally{busy=false;}
 }
 
 /* ==========================================
    ลบโครงการ
 ========================================== */
 
-function deleteProject() {
-  alert("โหมดอ่านอย่างเดียว: ยังไม่เปิดการแก้ไขข้อมูลออนไลน์");
-  return;
-
-
-  if (editingId === null) return;
-
-  if (!confirm("ยืนยันการลบโครงการนี้?")) return;
-
-  const oldProjects = structuredClone(projects);
-
-  projects = projects.filter(p => p.id !== editingId);
-
-  if (!persist()) {
-    projects = oldProjects;
-    return;
-  }
-
-  closeEditor();
-  render();
-
-  alert("ลบโครงการเรียบร้อย");
-}
+function deleteProject(){alert("การลบโครงการสงวนสิทธิ์สำหรับผู้ดูแลระบบ และยังไม่เปิดใช้จนกว่าจะติดตั้งระบบยืนยันตัวตนและสิทธิ์ DELETE ที่ฐานข้อมูล");}
 
 /* ==========================================
    ส่งออกข้อมูล JSON
@@ -1181,88 +1160,12 @@ function exportData() {
    นำเข้าข้อมูล JSON
 ========================================== */
 
-async function importData(event) {
-  alert("โหมดอ่านอย่างเดียว: ยังไม่เปิดการแก้ไขข้อมูลออนไลน์");
-  return;
-
-
-  const file = event.target.files[0];
-
-  if (!file) return;
-
-  try {
-
-    const text = await file.text();
-    const data = JSON.parse(text);
-
-    if (!Array.isArray(data)) {
-      throw new Error("ข้อมูลต้องเป็น Array");
-    }
-
-    if (!data.every(p =>
-      p &&
-      Number.isInteger(p.id) &&
-      typeof p.name === "string" &&
-      validCoordinate(p.lat, p.lng) &&
-      Array.isArray(p.photos || [])
-    )) {
-      throw new Error("รูปแบบข้อมูลโครงการไม่ถูกต้อง");
-    }
-
-    const ids = data.map(p => p.id);
-
-    if (new Set(ids).size !== ids.length) {
-      throw new Error("พบหมายเลขโครงการซ้ำ");
-    }
-
-    if (!confirm(
-      "การนำเข้าจะเขียนทับข้อมูลโครงการปัจจุบันทั้งหมด ยืนยันหรือไม่?"
-    )) {
-      return;
-    }
-
-    const oldProjects = projects;
-
-    projects = data.map(p => ({
-      id: p.id,
-      name: String(p.name || ""),
-      tambon: String(p.tambon || ""),
-      district: String(p.district || ""),
-      agency: String(p.agency || ""),
-      budget: String(p.budget || ""),
-      status: ["แก้ไขแล้ว", "กำลังแก้ไข", "ติดตาม", "วางแผน"]
-        .includes(p.status) ? p.status : "วางแผน",
-      detail: String(p.detail || ""),
-      lat: Number(p.lat),
-      lng: Number(p.lng),
-      photos: p.photos || []
-    }));
-
-    if (!persist()) {
-      projects = oldProjects;
-      return;
-    }
-
-    render();
-
-    alert("นำเข้าข้อมูลเรียบร้อย");
-
-  } catch (error) {
-
-    alert("นำเข้าไม่สำเร็จ: " + error.message);
-
-  } finally {
-
-    event.target.value = "";
-
-  }
-}
+async function importData(event){event.target.value="";alert("ปิดการนำเข้า JSON แบบเขียนทับทั้งหมดเพื่อป้องกันข้อมูลออนไลน์สูญหาย");}
 
 /* ==========================================
    เริ่มต้นระบบ
 ========================================== */
 
-render();
 loadOnlineProjects();
 
 </script>
