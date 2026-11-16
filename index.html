@@ -1,1 +1,1254 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<title>SAO-SURIN MAP 2570</title>
+
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Tahoma", sans-serif;
+  background: #f3f6fb;
+  color: #17243b;
+}
+
+header {
+  background: linear-gradient(120deg, #102a57, #1667a9);
+  color: white;
+  padding: 22px;
+  text-align: center;
+}
+
+header h1 {
+  margin: 0 0 10px;
+  font-size: 27px;
+}
+
+header p {
+  margin: 5px;
+  line-height: 1.6;
+}
+
+.toolbar {
+  padding: 12px;
+  background: white;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+button, select, input, textarea {
+  font-family: inherit;
+  font-size: 14px;
+}
+
+button {
+  background: #1767b3;
+  border: 0;
+  border-radius: 7px;
+  color: white;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+button:hover {
+  opacity: .85;
+}
+
+button.danger {
+  background: #c62828;
+}
+
+button.green {
+  background: #198754;
+}
+
+input, select, textarea {
+  border: 1px solid #ccd4df;
+  border-radius: 6px;
+  padding: 9px;
+}
+
+#map {
+  width: 100%;
+  height: 68vh;
+  min-height: 450px;
+}
+
+.stats {
+  background: white;
+  padding: 12px 20px;
+  font-weight: bold;
+}
+
+.notice {
+  padding: 12px 20px;
+  font-size: 13px;
+  color: #5d6675;
+}
+
+.panel {
+  max-width: 1050px;
+  margin: 20px auto;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.field.full {
+  grid-column: 1 / -1;
+}
+
+.field textarea {
+  min-height: 75px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.photo-grid img {
+  width: 100%;
+  height: 130px;
+  object-fit: cover;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.photo-item {
+  position: relative;
+}
+
+.photo-item button {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  padding: 5px 8px;
+  background: #c62828;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.65);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 15px;
+}
+
+.modal-box {
+  background: white;
+  width: min(720px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 12px;
+  padding: 22px;
+  position: relative;
+}
+
+.close {
+  float: right;
+  background: #666;
+}
+
+.detail-row {
+  padding: 7px 0;
+  border-bottom: 1px solid #eee;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.project-marker {
+  background: #e83e8c;
+  color: white;
+  width: 31px;
+  height: 31px;
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 2px 8px #555;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 11px;
+}
+
+footer {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-size: 13px;
+}
+
+@media(max-width: 650px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  header h1 {
+    font-size: 21px;
+  }
+
+  #map {
+    height: 65vh;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>🏗️ SAO-SURIN MAP 2570</h1>
+  <p>
+    ระบบแผนที่แสดงผลการตรวจสอบ ติดตาม
+    และให้คำปรึกษาแนะนำสิ่งก่อสร้างไม่ใช้ประโยชน์
+  </p>
+  <p>สำนักตรวจเงินแผ่นดินจังหวัดสุรินทร์</p>
+  <p>
+    “สร้างเสร็จ ไม่ใช่ความสำเร็จ
+    หากประชาชนยังไม่ได้ใช้ประโยชน์”
+  </p>
+</header>
+
+<div class="toolbar">
+  <button class="green" onclick="newProject()">
+    ➕ เพิ่มหมุดโครงการ
+  </button>
+
+  <select id="statusFilter" onchange="render()">
+    <option value="">ทุกสถานะ</option>
+    <option value="แก้ไขแล้ว">แก้ไขและใช้ประโยชน์แล้ว</option>
+    <option value="กำลังแก้ไข">อยู่ระหว่างแก้ไข</option>
+    <option value="ติดตาม">อยู่ระหว่างติดตาม</option>
+    <option value="วางแผน">วางแผนตรวจสอบ</option>
+  </select>
+
+  <input
+    id="search"
+    placeholder="🔎 ค้นหาโครงการ"
+    oninput="render()"
+  >
+
+  <button onclick="exportData()">💾 ส่งออก JSON</button>
+
+  <button onclick="document.getElementById('importFile').click()">
+    📂 นำเข้า JSON
+  </button>
+
+  <input
+    id="importFile"
+    type="file"
+    accept=".json,application/json"
+    hidden
+    onchange="importData(event)"
+  >
+</div>
+
+<div id="map"></div>
+
+<div class="stats" id="stats"></div>
+
+<div class="notice">
+  ⚠️ หมุดบนแผนที่เป็นตำแหน่งอ้างอิงเบื้องต้น
+  ไม่ใช่พิกัดสิ่งก่อสร้างจริง
+  ควรตรวจสอบและแก้ไขพิกัดก่อนใช้อ้างอิงทางราชการ
+</div>
+
+<section id="editor" class="panel hidden">
+
+  <h2 id="editorTitle">เพิ่ม / แก้ไขโครงการ</h2>
+
+  <div class="form-grid">
+
+    <div class="field full">
+      <label>ชื่อโครงการ</label>
+      <input id="fName">
+    </div>
+
+    <div class="field">
+      <label>ตำบล</label>
+      <input id="fTambon">
+    </div>
+
+    <div class="field">
+      <label>อำเภอ</label>
+      <input id="fDistrict">
+    </div>
+
+    <div class="field full">
+      <label>หน่วยงานรับผิดชอบ</label>
+      <input id="fAgency">
+    </div>
+
+    <div class="field">
+      <label>งบประมาณ</label>
+      <input id="fBudget" placeholder="เช่น 2.67 ล้านบาท">
+    </div>
+
+    <div class="field">
+      <label>สถานะ</label>
+      <select id="fStatus">
+        <option value="แก้ไขแล้ว">แก้ไขและใช้ประโยชน์แล้ว</option>
+        <option value="กำลังแก้ไข">อยู่ระหว่างแก้ไข</option>
+        <option value="ติดตาม">อยู่ระหว่างติดตาม</option>
+        <option value="วางแผน">วางแผนตรวจสอบ</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>ละติจูด (Latitude)</label>
+      <input id="fLat" type="number" step="any">
+    </div>
+
+    <div class="field">
+      <label>ลองจิจูด (Longitude)</label>
+      <input id="fLng" type="number" step="any">
+    </div>
+
+    <div class="field full">
+      <label>รายละเอียดเพิ่มเติม</label>
+      <textarea id="fDetail"></textarea>
+    </div>
+
+    <div class="field full">
+      <label>เพิ่มหรือเปลี่ยนรูปภาพ</label>
+      <input
+        id="fPhotos"
+        type="file"
+        accept="image/*"
+        multiple
+        onchange="addPhotos(event)"
+      >
+      <div id="editPhotos" class="photo-grid"></div>
+    </div>
+
+  </div>
+
+  <br>
+
+  <button class="green" onclick="saveProject()">
+    💾 บันทึกโครงการ
+  </button>
+
+  <button onclick="closeEditor()">ยกเลิก</button>
+
+  <button
+    id="deleteButton"
+    class="danger"
+    onclick="deleteProject()"
+  >
+    🗑️ ลบโครงการ
+  </button>
+
+</section>
+
+<div id="detailModal" class="modal hidden">
+  <div class="modal-box">
+    <button class="close" onclick="closeDetail()">✕ ปิด</button>
+    <div id="detailContent"></div>
+  </div>
+</div>
+
+<div id="imageModal" class="modal hidden" onclick="closeImage()">
+  <img
+    id="largeImage"
+    alt="ภาพประกอบโครงการ"
+    style="max-width:95%;max-height:95%;object-fit:contain"
+  >
+</div>
+
+<footer>
+  SAO-SURIN MAP 2570<br>
+  สำนักตรวจเงินแผ่นดินจังหวัดสุรินทร์
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+"use strict";
+
+/* ==========================================
+   ข้อมูลเริ่มต้น 16 โครงการ
+
+   พิกัดเป็นจุดอ้างอิงเบื้องต้นเท่านั้น
+   ไม่ใช่พิกัดสิ่งก่อสร้างจริง
+========================================== */
+
+const initialProjects = [
+
+  {
+    id: 1,
+    name: "ปรับปรุงภูมิทัศน์ปราสาทตาเมือนธม",
+    tambon: "ตาเมียง",
+    district: "พนมดงรัก",
+    agency: "อบต.ตาเมียง",
+    budget: "1.47 ล้านบาท",
+    status: "แก้ไขแล้ว",
+    detail: "แก้ไขปัญหาและใช้ประโยชน์แล้ว",
+    lat: 14.350,
+    lng: 103.290,
+    photos: []
+  },
+
+  {
+    id: 2,
+    name: "ศูนย์ OTOP พื้นที่ชายแดนกลุ่มปราสาทตาเมือง",
+    tambon: "ตาเมียง",
+    district: "พนมดงรัก",
+    agency: "จังหวัดสุรินทร์ / สำนักงานโยธาธิการและผังเมือง",
+    budget: "2.50 ล้านบาท",
+    status: "กำลังแก้ไข",
+    detail: "อยู่ระหว่างดำเนินการแก้ไขปัญหา",
+    lat: 14.355,
+    lng: 103.295,
+    photos: []
+  },
+
+  {
+    id: 3,
+    name: "อาคารตลาดสด",
+    tambon: "กังแอน",
+    district: "ปราสาท",
+    agency: "เทศบาลตำบลกังแอน",
+    budget: "กว่า 30 ล้านบาท",
+    status: "ติดตาม",
+    detail: "เปิดใช้ประโยชน์แล้ว อยู่ระหว่างติดตามความคุ้มค่า",
+    lat: 14.640,
+    lng: 103.400,
+    photos: []
+  },
+
+  {
+    id: 4,
+    name: "ศูนย์แสดงสินค้าพื้นบ้าน",
+    tambon: "ณรงค์",
+    district: "ศรีณรงค์",
+    agency: "อบต.ศรีณรงค์",
+    budget: "1.80 ล้านบาท",
+    status: "แก้ไขแล้ว",
+    detail: "แก้ไขและใช้ประโยชน์ตามวัตถุประสงค์แล้ว",
+    lat: 14.770,
+    lng: 103.890,
+    photos: []
+  },
+
+  {
+    id: 5,
+    name: "สถานีสูบน้ำพลังงานแสงอาทิตย์ บ้านสำโรง",
+    tambon: "โพนครก",
+    district: "ท่าตูม",
+    agency: "กรมพัฒนาที่ดิน",
+    budget: "10.26 ล้านบาท",
+    status: "ติดตาม",
+    detail: "เปิดใช้ระบบจ่ายน้ำแล้ว ติดตามความคุ้มค่าตามเป้าหมายพื้นที่รับประโยชน์ 1,300 ไร่",
+    lat: 15.310,
+    lng: 103.700,
+    photos: []
+  },
+
+  {
+    id: 6,
+    name: "สถานีสูบน้ำด้วยไฟฟ้า",
+    tambon: "ทับใหญ่",
+    district: "รัตนบุรี",
+    agency: "สำนักก่อสร้างขนาดกลาง กรมชลประทาน / อบต.ทับใหญ่",
+    budget: "ประมาณ 39 ล้านบาท",
+    status: "ติดตาม",
+    detail: "อยู่ระหว่างติดตามและตรวจสอบความคืบหน้าการแก้ไข",
+    lat: 15.310,
+    lng: 103.860,
+    photos: []
+  },
+
+  {
+    id: 7,
+    name: "สถานีสูบน้ำด้วยไฟฟ้า บ้านนาจาน",
+    tambon: "ทับใหญ่",
+    district: "รัตนบุรี",
+    agency: "สำนักก่อสร้างขนาดกลาง กรมชลประทาน / อบต.ทับใหญ่",
+    budget: "13 ล้านบาท",
+    status: "วางแผน",
+    detail: "วางแผนตรวจสอบปี 2570 และให้คำปรึกษา",
+    lat: 15.315,
+    lng: 103.865,
+    photos: []
+  },
+
+  {
+    id: 8,
+    name: "สถานีสูบน้ำพลังงานแสงอาทิตย์",
+    tambon: "เมืองลีง",
+    district: "จอมพระ",
+    agency: "โครงการชลประทานสุรินทร์ กรมชลประทาน / อบต.เมืองลีง",
+    budget: "4.74 ล้านบาท",
+    status: "ติดตาม",
+    detail: "ปรับปรุงการบริหารจัดการแล้ว ติดตามความคุ้มค่าตามเป้าหมาย 300 ไร่",
+    lat: 15.100,
+    lng: 103.580,
+    photos: []
+  },
+
+  {
+    id: 9,
+    name: "โครงการระบบน้ำสูบน้ำด้วยไฟฟ้า",
+    tambon: "ผักไหม",
+    district: "ศีขรภูมิ",
+    agency: "สำนักก่อสร้างขนาดกลาง กรมชลประทาน / เทศบาลตำบลผักไหม",
+    budget: "10 ล้านบาท",
+    status: "วางแผน",
+    detail: "วางแผนตรวจสอบปี 2570 และให้คำแนะนำ",
+    lat: 14.950,
+    lng: 103.830,
+    photos: []
+  },
+
+  {
+    id: 10,
+    name: "โครงการแก้มลิงหนองน้ำบ้านสวาท–หนองเกาะ",
+    tambon: "ทับทัน",
+    district: "สังขะ",
+    agency: "กรมชลประทาน / สำนักงานชลประทานที่ 8",
+    budget: "ไม่ระบุ",
+    status: "วางแผน",
+    detail: "วางแผนตรวจสอบปี 2570",
+    lat: 14.620,
+    lng: 103.760,
+    photos: []
+  },
+
+  {
+    id: 11,
+    name: "สถานีสูบน้ำด้วยไฟฟ้า",
+    tambon: "ขอนแตก",
+    district: "สังขะ",
+    agency: "อบต.ขอนแตก",
+    budget: "ไม่ระบุ",
+    status: "วางแผน",
+    detail: "วางแผนตรวจสอบและให้คำปรึกษาแนะนำ",
+    lat: 14.590,
+    lng: 103.850,
+    photos: []
+  },
+
+  {
+    id: 12,
+    name: "ระบบประปาหมู่บ้านผิวดินขนาดใหญ่",
+    tambon: "เทพรักษา",
+    district: "สังขะ",
+    agency: "อบต.เทพรักษา",
+    budget: "2.67 ล้านบาท",
+    status: "วางแผน",
+    detail: "วางแผนตรวจสอบและให้คำปรึกษาแนะนำ",
+    lat: 14.530,
+    lng: 103.960,
+    photos: []
+  },
+
+  {
+    id: 13,
+    name: "อาคารสำนักงานป้องกันและบรรเทาสาธารณภัยจังหวัดสุรินทร์",
+    tambon: "เฉนียง",
+    district: "เมืองสุรินทร์",
+    agency: "กรมป้องกันและบรรเทาสาธารณภัย",
+    budget: "ไม่ระบุ",
+    status: "วางแผน",
+    detail: "วางแผนตรวจสอบและให้คำแนะนำในการแก้ไขปัญหา",
+    lat: 14.850,
+    lng: 103.480,
+    photos: []
+  },
+
+  {
+    id: 14,
+    name: "ระบบประปาโซลาร์เซลล์หนองสวายจ๊ะ",
+    tambon: "สวาย",
+    district: "เมืองสุรินทร์",
+    agency: "กรมทรัพยากรน้ำ / อบต.สวาย",
+    budget: "1.78 ล้านบาท",
+    status: "วางแผน",
+    detail: "วางแผนตรวจสอบและให้คำแนะนำในการแก้ไขปัญหา",
+    lat: 14.790,
+    lng: 103.410,
+    photos: []
+  },
+
+  {
+    id: 15,
+    name: "ปรับปรุงและขุดลอกคลองส่งน้ำบ้านบุอำเปาว์",
+    tambon: "บักได",
+    district: "พนมดงรัก",
+    agency: "อบต.บักได",
+    budget: "3.51 ล้านบาท",
+    status: "วางแผน",
+    detail: "วางแผนตรวจสอบและให้คำแนะนำในการแก้ไขปัญหา",
+    lat: 14.400,
+    lng: 103.330,
+    photos: []
+  },
+
+  {
+    id: 16,
+    name: "ระบบสถานีสูบน้ำ ถูกทิ้งร้างกว่า 20 ปี",
+    tambon: "ศรีณรงค์",
+    district: "ชุมพลบุรี",
+    agency: "อบต.ศรีณรงค์ (ข้อมูลหน่วยงานยังต้องตรวจสอบ)",
+    budget: "ไม่ระบุ",
+    status: "วางแผน",
+    detail: "ข้อมูลเบื้องต้นจากข่าว อยู่ระหว่างวางแผนตรวจสอบและให้คำปรึกษาแนะนำ ต้องตรวจสอบชื่อพื้นที่และข้อเท็จจริงก่อนใช้อ้างอิง",
+    lat: 15.360,
+    lng: 103.390,
+    photos: []
+  }
+
+];
+
+/* ==========================================
+   จัดการข้อมูล
+========================================== */
+
+const STORAGE_KEY = "SAO_SURIN_MAP_2570_V4";
+
+function loadProjects() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+
+    if (saved) {
+      const parsed = JSON.parse(saved);
+
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    }
+  } catch (error) {
+    console.warn("ไม่สามารถอ่านข้อมูลเดิม", error);
+  }
+
+  return structuredClone(initialProjects);
+}
+
+let projects = loadProjects();
+
+let editingId = null;
+let editingPhotos = [];
+
+function persist() {
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(projects)
+    );
+    return true;
+  } catch (error) {
+    alert(
+      "ไม่สามารถบันทึกข้อมูลในเบราว์เซอร์ได้ " +
+      "อาจเกิดจากพื้นที่จัดเก็บเต็ม โดยเฉพาะรูปภาพขนาดใหญ่"
+    );
+    return false;
+  }
+}
+
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, function(c) {
+    return {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    }[c];
+  });
+}
+
+function validCoordinate(lat, lng) {
+  return Number.isFinite(Number(lat)) &&
+         Number.isFinite(Number(lng)) &&
+         Number(lat) >= -90 &&
+         Number(lat) <= 90 &&
+         Number(lng) >= -180 &&
+         Number(lng) <= 180;
+}
+
+/* ==========================================
+   สร้างแผนที่
+========================================== */
+
+const map = L.map("map").setView(
+  [14.90, 103.65],
+  9
+);
+
+L.tileLayer(
+  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  {
+    attribution: "&copy; OpenStreetMap contributors",
+    maxZoom: 19
+  }
+).addTo(map);
+
+const markerLayer = L.layerGroup().addTo(map);
+
+function markerIcon(number) {
+  return L.divIcon({
+    className: "",
+    html:
+      '<div class="project-marker">' +
+      escapeHTML(String(number).padStart(2, "0")) +
+      "</div>",
+    iconSize: [31, 31],
+    iconAnchor: [15, 15]
+  });
+}
+
+function render() {
+
+  markerLayer.clearLayers();
+
+  const filter = document.getElementById("statusFilter").value;
+  const search = document.getElementById("search").value
+    .trim()
+    .toLowerCase();
+
+  const filtered = projects.filter(p => {
+
+    const matchesStatus = !filter || p.status === filter;
+
+    const text = [
+      p.name,
+      p.tambon,
+      p.district,
+      p.agency,
+      p.budget,
+      p.detail
+    ].join(" ").toLowerCase();
+
+    return matchesStatus && text.includes(search);
+  });
+
+  filtered.forEach(p => {
+
+    if (!validCoordinate(p.lat, p.lng)) return;
+
+    const marker = L.marker(
+      [Number(p.lat), Number(p.lng)],
+      {
+        icon: markerIcon(p.id)
+      }
+    );
+
+    marker.on("click", () => showDetail(p.id));
+
+    marker.bindTooltip(
+      escapeHTML(p.name),
+      { direction: "top" }
+    );
+
+    markerLayer.addLayer(marker);
+  });
+
+  document.getElementById("stats").textContent =
+    "📍 แสดง " + filtered.length +
+    " โครงการ จากทั้งหมด " + projects.length + " โครงการ";
+}
+
+/* ==========================================
+   แสดงรายละเอียดเมื่อคลิกหมุด
+========================================== */
+
+function showDetail(id) {
+
+  const p = projects.find(x => x.id === id);
+
+  if (!p) return;
+
+  let html = `
+    <h2>📍 ${escapeHTML(p.name)}</h2>
+
+    <div class="detail-row">
+      <b>หมายเลขโครงการ:</b> ${escapeHTML(p.id)}
+    </div>
+
+    <div class="detail-row">
+      <b>ตำบล:</b> ${escapeHTML(p.tambon)}
+    </div>
+
+    <div class="detail-row">
+      <b>อำเภอ:</b> ${escapeHTML(p.district)}
+    </div>
+
+    <div class="detail-row">
+      <b>จังหวัด:</b> สุรินทร์
+    </div>
+
+    <div class="detail-row">
+      <b>หน่วยงาน:</b> ${escapeHTML(p.agency)}
+    </div>
+
+    <div class="detail-row">
+      <b>งบประมาณ:</b> ${escapeHTML(p.budget)}
+    </div>
+
+    <div class="detail-row">
+      <b>สถานะ:</b> ${escapeHTML(p.status)}
+    </div>
+
+    <div class="detail-row">
+      <b>รายละเอียด:</b> ${escapeHTML(p.detail)}
+    </div>
+
+    <div class="detail-row">
+      <b>ละติจูด:</b> ${escapeHTML(p.lat)}
+    </div>
+
+    <div class="detail-row">
+      <b>ลองจิจูด:</b> ${escapeHTML(p.lng)}
+    </div>
+
+    <h3>🖼️ ภาพประกอบโครงการ</h3>
+    <div class="photo-grid">
+  `;
+
+  const photos = Array.isArray(p.photos) ? p.photos : [];
+
+  if (photos.length === 0) {
+    html += "<p>ยังไม่มีรูปภาพ</p>";
+  }
+
+  photos.forEach((photo, index) => {
+    html += `
+      <img
+        src="${escapeHTML(photo)}"
+        alt="ภาพโครงการ ${index + 1}"
+        onclick="showImageByIndex(${p.id}, ${index})"
+      >
+    `;
+  });
+
+  html += `
+    </div>
+    <br>
+    <button onclick="editProject(${p.id})">
+      ✏️ แก้ไขข้อมูล / เปลี่ยนรูปภาพ
+    </button>
+  `;
+
+  document.getElementById("detailContent").innerHTML = html;
+
+  document.getElementById("detailModal")
+    .classList.remove("hidden");
+}
+
+function closeDetail() {
+  document.getElementById("detailModal")
+    .classList.add("hidden");
+}
+
+function showImageByIndex(id, index) {
+  const p = projects.find(x => x.id === id);
+
+  if (!p || !Array.isArray(p.photos)) return;
+
+  const photo = p.photos[index];
+
+  if (!photo) return;
+
+  document.getElementById("largeImage").src = photo;
+
+  document.getElementById("imageModal")
+    .classList.remove("hidden");
+}
+
+function closeImage() {
+  document.getElementById("imageModal")
+    .classList.add("hidden");
+}
+
+/* ==========================================
+   เพิ่มโครงการ
+========================================== */
+
+function newProject() {
+
+  editingId = null;
+  editingPhotos = [];
+
+  document.getElementById("editorTitle").textContent =
+    "➕ เพิ่มโครงการใหม่";
+
+  [
+    "fName",
+    "fTambon",
+    "fDistrict",
+    "fAgency",
+    "fBudget",
+    "fDetail",
+    "fLat",
+    "fLng"
+  ].forEach(id => {
+    document.getElementById(id).value = "";
+  });
+
+  document.getElementById("fStatus").value = "วางแผน";
+
+  document.getElementById("deleteButton")
+    .classList.add("hidden");
+
+  renderEditPhotos();
+
+  document.getElementById("editor")
+    .classList.remove("hidden");
+
+  document.getElementById("editor")
+    .scrollIntoView({ behavior: "smooth" });
+}
+
+/* ==========================================
+   แก้ไขโครงการ
+========================================== */
+
+function editProject(id) {
+
+  const p = projects.find(x => x.id === id);
+
+  if (!p) return;
+
+  closeDetail();
+
+  editingId = id;
+  editingPhotos = [...(p.photos || [])];
+
+  document.getElementById("editorTitle").textContent =
+    "✏️ แก้ไขโครงการหมายเลข " + id;
+
+  document.getElementById("fName").value = p.name || "";
+  document.getElementById("fTambon").value = p.tambon || "";
+  document.getElementById("fDistrict").value = p.district || "";
+  document.getElementById("fAgency").value = p.agency || "";
+  document.getElementById("fBudget").value = p.budget || "";
+  document.getElementById("fStatus").value = p.status || "วางแผน";
+  document.getElementById("fDetail").value = p.detail || "";
+  document.getElementById("fLat").value = p.lat ?? "";
+  document.getElementById("fLng").value = p.lng ?? "";
+
+  document.getElementById("deleteButton")
+    .classList.remove("hidden");
+
+  renderEditPhotos();
+
+  document.getElementById("editor")
+    .classList.remove("hidden");
+
+  document.getElementById("editor")
+    .scrollIntoView({ behavior: "smooth" });
+}
+
+function closeEditor() {
+  document.getElementById("editor")
+    .classList.add("hidden");
+}
+
+/* ==========================================
+   จัดการรูปภาพ
+========================================== */
+
+async function addPhotos(event) {
+
+  const files = Array.from(event.target.files || []);
+
+  for (const file of files) {
+
+    if (!file.type.startsWith("image/")) continue;
+
+    if (file.size > 3 * 1024 * 1024) {
+      alert("รูปภาพต้องมีขนาดไม่เกิน 3 MB ต่อไฟล์");
+      continue;
+    }
+
+    const data = await new Promise((resolve, reject) => {
+
+      const reader = new FileReader();
+
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+
+      reader.readAsDataURL(file);
+    });
+
+    editingPhotos.push(data);
+  }
+
+  event.target.value = "";
+
+  renderEditPhotos();
+}
+
+function renderEditPhotos() {
+
+  const box = document.getElementById("editPhotos");
+
+  box.innerHTML = "";
+
+  editingPhotos.forEach((photo, index) => {
+
+    const div = document.createElement("div");
+    div.className = "photo-item";
+
+    const img = document.createElement("img");
+    img.src = photo;
+    img.alt = "ภาพประกอบโครงการ";
+
+    const button = document.createElement("button");
+    button.textContent = "ลบ";
+
+    button.onclick = () => {
+      editingPhotos.splice(index, 1);
+      renderEditPhotos();
+    };
+
+    div.appendChild(img);
+    div.appendChild(button);
+
+    box.appendChild(div);
+  });
+}
+
+/* ==========================================
+   บันทึกโครงการ
+========================================== */
+
+function saveProject() {
+
+  const name = document.getElementById("fName").value.trim();
+  const latText = document.getElementById("fLat").value;
+  const lngText = document.getElementById("fLng").value;
+
+  if (!name) {
+    alert("กรุณาระบุชื่อโครงการ");
+    return;
+  }
+
+  if (
+    latText === "" ||
+    lngText === "" ||
+    !validCoordinate(latText, lngText)
+  ) {
+    alert("กรุณาระบุพิกัดละติจูดและลองจิจูดที่ถูกต้อง");
+    return;
+  }
+
+  const oldProjects = structuredClone(projects);
+
+  const id = editingId === null
+    ? Math.max(0, ...projects.map(p => Number(p.id) || 0)) + 1
+    : editingId;
+
+  const data = {
+    id,
+    name,
+    tambon: document.getElementById("fTambon").value.trim(),
+    district: document.getElementById("fDistrict").value.trim(),
+    agency: document.getElementById("fAgency").value.trim(),
+    budget: document.getElementById("fBudget").value.trim(),
+    status: document.getElementById("fStatus").value,
+    detail: document.getElementById("fDetail").value.trim(),
+    lat: Number(latText),
+    lng: Number(lngText),
+    photos: [...editingPhotos]
+  };
+
+  if (editingId === null) {
+    projects.push(data);
+  } else {
+    const index = projects.findIndex(p => p.id === editingId);
+
+    if (index < 0) return;
+
+    projects[index] = data;
+  }
+
+  if (!persist()) {
+    projects = oldProjects;
+    return;
+  }
+
+  render();
+  closeEditor();
+
+  map.setView([data.lat, data.lng], 12);
+
+  alert("บันทึกโครงการเรียบร้อย");
+}
+
+/* ==========================================
+   ลบโครงการ
+========================================== */
+
+function deleteProject() {
+
+  if (editingId === null) return;
+
+  if (!confirm("ยืนยันการลบโครงการนี้?")) return;
+
+  const oldProjects = structuredClone(projects);
+
+  projects = projects.filter(p => p.id !== editingId);
+
+  if (!persist()) {
+    projects = oldProjects;
+    return;
+  }
+
+  closeEditor();
+  render();
+
+  alert("ลบโครงการเรียบร้อย");
+}
+
+/* ==========================================
+   ส่งออกข้อมูล JSON
+========================================== */
+
+function exportData() {
+
+  const json = JSON.stringify(projects, null, 2);
+
+  const blob = new Blob(
+    [json],
+    { type: "application/json;charset=utf-8" }
+  );
+
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+
+  a.href = url;
+  a.download = "SAO-SURIN-MAP-2570-data.json";
+
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  URL.revokeObjectURL(url);
+}
+
+/* ==========================================
+   นำเข้าข้อมูล JSON
+========================================== */
+
+async function importData(event) {
+
+  const file = event.target.files[0];
+
+  if (!file) return;
+
+  try {
+
+    const text = await file.text();
+    const data = JSON.parse(text);
+
+    if (!Array.isArray(data)) {
+      throw new Error("ข้อมูลต้องเป็น Array");
+    }
+
+    if (!data.every(p =>
+      p &&
+      Number.isInteger(p.id) &&
+      typeof p.name === "string" &&
+      validCoordinate(p.lat, p.lng) &&
+      Array.isArray(p.photos || [])
+    )) {
+      throw new Error("รูปแบบข้อมูลโครงการไม่ถูกต้อง");
+    }
+
+    const ids = data.map(p => p.id);
+
+    if (new Set(ids).size !== ids.length) {
+      throw new Error("พบหมายเลขโครงการซ้ำ");
+    }
+
+    if (!confirm(
+      "การนำเข้าจะเขียนทับข้อมูลโครงการปัจจุบันทั้งหมด ยืนยันหรือไม่?"
+    )) {
+      return;
+    }
+
+    const oldProjects = projects;
+
+    projects = data.map(p => ({
+      id: p.id,
+      name: String(p.name || ""),
+      tambon: String(p.tambon || ""),
+      district: String(p.district || ""),
+      agency: String(p.agency || ""),
+      budget: String(p.budget || ""),
+      status: ["แก้ไขแล้ว", "กำลังแก้ไข", "ติดตาม", "วางแผน"]
+        .includes(p.status) ? p.status : "วางแผน",
+      detail: String(p.detail || ""),
+      lat: Number(p.lat),
+      lng: Number(p.lng),
+      photos: p.photos || []
+    }));
+
+    if (!persist()) {
+      projects = oldProjects;
+      return;
+    }
+
+    render();
+
+    alert("นำเข้าข้อมูลเรียบร้อย");
+
+  } catch (error) {
+
+    alert("นำเข้าไม่สำเร็จ: " + error.message);
+
+  } finally {
+
+    event.target.value = "";
+
+  }
+}
+
+/* ==========================================
+   เริ่มต้นระบบ
+========================================== */
+
+render();
+
+</script>
+
+</body>
+</html>
