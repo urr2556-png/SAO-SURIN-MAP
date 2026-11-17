@@ -272,7 +272,7 @@ footer {
 .ai-header:before{content:"";position:absolute;inset:-100%;background:repeating-linear-gradient(110deg,transparent 0 38px,#ffffff08 39px 40px);animation:aiSweep 22s linear infinite;pointer-events:none}
 @keyframes aiSweep{to{transform:translateX(100px)}}
 .ai-header>*{position:relative;z-index:1}
-.sao-logo{width:92px;height:92px;object-fit:contain;filter:drop-shadow(0 3px 10px #0007)}
+.sao-logo{width:132px;height:132px;object-fit:contain;filter:drop-shadow(0 3px 10px #0007)}
 .ai-head-center h1{font-size:clamp(21px,2.3vw,32px);margin:5px 0}
 .ai-head-center p{margin:2px 0}
 .ai-eyebrow{font-size:11px;letter-spacing:1.2px;color:#aeeaf4;font-weight:bold}
@@ -283,7 +283,10 @@ footer {
 .visitor-badge{display:inline-block;margin-top:9px;padding:6px 10px;background:#ffffff20;border:1px solid #ffffff45;border-radius:30px;font-size:12px}
 #mainToolbar{position:sticky;top:0;z-index:1200;box-shadow:0 3px 14px #0b284b21;min-height:60px}
 .office-address{text-align:right;color:#294b70;font-weight:bold}
-@media(max-width:720px){.ai-header{grid-template-columns:65px minmax(0,1fr);padding:12px;gap:10px}.sao-logo{width:60px;height:60px}.ai-head-right{grid-column:1/-1;text-align:center}.ai-head-center p{font-size:11px}.ai-eyebrow{font-size:9px}#mainToolbar{top:0}.office-address{text-align:center}}
+@media(max-width:720px){.ai-header{grid-template-columns:88px minmax(0,1fr);padding:12px;gap:10px}.sao-logo{width:84px;height:84px}.ai-head-right{grid-column:1/-1;text-align:center}.ai-head-center p{font-size:11px}.ai-eyebrow{font-size:9px}#mainToolbar{top:0}.office-address{text-align:center}}
+.sao-chart-summary{padding:9px 10px;margin:0 0 10px;border-radius:9px;background:#eaf3ff;color:#123967;font-size:12px;font-weight:750;line-height:1.65}
+.admin-tools{padding:8px 12px;background:#fff6ee;border-top:1px solid #e5c7ac;color:#794116;font-size:12px}
+.admin-tools button{border:1px solid #bd8d7e;background:#fff;color:#9a3e28;border-radius:7px;padding:6px 10px;cursor:pointer}
 </style>
 </head>
 
@@ -336,6 +339,7 @@ footer {
 </div>
 
 <div id="syncStatus" class="notice" role="status">กำลังเชื่อมต่อฐานข้อมูล...</div>
+<div class="admin-tools"><button type="button" onclick="showAdminDeleteInfo()">🔐 ผู้ดูแลระบบ · จัดการลบโครงการ</button> <span>ต้องยืนยันตัวตนผู้ดูแลก่อนจึงจะลบข้อมูลได้</span></div>
 <div class="sao-layout"><div id="map"></div><aside class="sao-dashboard" aria-label="กราฟสรุปโครงการ"><h2>📊 ภาพรวมโครงการ</h2><div id="saoCharts"></div></aside></div>
 
 <div class="stats" id="stats"></div>
@@ -863,7 +867,7 @@ function saoAgency(p){
   if(/กรม|กระทรวง|สำนัก.*ชลประทาน|สำนักงานชลประทาน/.test(t))return SAO_AGENCIES[7];
   return "ไม่ระบุ/จำแนกไม่ได้";
 }
-function saoChart(title,categories,selector){
+function saoChart(title,categories,selector,kind="projects"){
   const counts=new Map(categories.map(c=>[c,{count:0,budget:0,missing:0}]));
   counts.set("ไม่ระบุ/ข้อมูลเดิม",{count:0,budget:0,missing:0});
   counts.set("ไม่ระบุ/จำแนกไม่ได้",{count:0,budget:0,missing:0});
@@ -874,7 +878,18 @@ function saoChart(title,categories,selector){
   let acc=0;const slices=rows.filter(([k,v])=>v.count).map(([k,v])=>{const start=acc;acc+=v.count/Math.max(total,1)*100;return `${palette[rows.findIndex(x=>x[0]===k)]} ${start}% ${acc}%`;});
   const pie=document.createElement("div");pie.className="sao-pie";pie.style.background=total?`conic-gradient(${slices.join(",")})`:"#e5e7eb";
   const card=document.createElement("section");card.className="sao-chart";
-  const h=document.createElement("h3");h.textContent=title;card.append(h,pie);
+  const h=document.createElement("h3");h.textContent=title;
+  const summary=document.createElement("div");summary.className="sao-chart-summary";
+  const budgetKnown=projects.reduce((a,p)=>a+(saoBudget(p.budget)??0),0);
+  const budgetMissing=projects.filter(p=>saoBudget(p.budget)===null).length;
+  if(kind==="agencies"){
+    const agencyNames=new Set(projects.map(p=>String(p.agency||"").trim()).filter(Boolean));
+    const unclassified=projects.filter(p=>!String(p.agency||"").trim()).length;
+    summary.textContent=`จำนวนรวม ${agencyNames.size.toLocaleString('th-TH')} หน่วยงาน`+(unclassified?` · โครงการไม่ระบุหน่วยงาน ${unclassified} รายการ`:"");
+  }else{
+    summary.textContent=`จำนวนรวม ${total.toLocaleString('th-TH')} โครงการ · งบประมาณรวม ${(budgetKnown/1e6).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2})} ล้านบาท`+(budgetMissing?` (ยังไม่ทราบงบ ${budgetMissing} โครงการ)`:"");
+  }
+  card.append(h,summary,pie);
   const legend=document.createElement("div");legend.className="sao-legend";
   rows.forEach(([k,v],i)=>{
     const row=document.createElement("div");row.className="sao-legend-row";
@@ -888,7 +903,7 @@ function renderSaoCharts(){
   const target=document.getElementById("saoCharts");if(!target)return;target.replaceChildren(
     saoChart("3.1 สถานะการแก้ไขโครงการ",SAO_STATUS,saoStatus),
     saoChart("3.2 สถานะการตรวจสอบ",SAO_INSPECTION,saoInspection),
-    saoChart("3.3 ประเภทหน่วยงาน",SAO_AGENCIES,saoAgency)
+    saoChart("3.3 ประเภทหน่วยงาน",SAO_AGENCIES,saoAgency,"agencies")
   );
 }
 
@@ -1266,6 +1281,7 @@ async function saveProject(){
    ลบโครงการ
 ========================================== */
 
+function showAdminDeleteInfo(){alert("ปุ่มสำหรับผู้ดูแลระบบพร้อมแสดงแล้ว แต่ยังไม่สามารถลบข้อมูลได้จนกว่าจะติดตั้ง Supabase Auth และนโยบาย DELETE สำหรับผู้ดูแลที่ได้รับอนุญาตเท่านั้น เพื่อป้องกันการลบโดยบุคคลทั่วไป");}
 function deleteProject(){alert("การลบโครงการสงวนสิทธิ์สำหรับผู้ดูแลระบบ และยังไม่เปิดใช้จนกว่าจะติดตั้งระบบยืนยันตัวตนและสิทธิ์ DELETE ที่ฐานข้อมูล");}
 
 /* ==========================================
