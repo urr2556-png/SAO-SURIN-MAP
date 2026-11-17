@@ -373,7 +373,6 @@ footer {
 
   <button onclick="exportData()">💾 ส่งออก JSON</button>
   <button type="button" class="sao-admin-btn" onclick="showAdminDeleteInfo()">🔐 ผู้ดูแลระบบ</button>
-  <a class="sao-road-btn" href="confidential.html" aria-label="ส่งข้อมูลโครงการเป็นความลับถึง สตง.">🔒 แจ้งข้อมูลลับถึง สตง.</a>
   <a class="sao-road-btn" href="https://urr2556-png.github.io/SAO-SURIN-ROAD-MAP/" target="_blank" rel="noopener noreferrer" aria-label="เปิดระบบแผนที่ติดตามถนนชำรุด">🛣️ แผนที่ถนนชำรุด ↗</a>
 
   <button class="hidden" onclick="document.getElementById('importFile').click()">
@@ -793,7 +792,18 @@ async function loadOnlineProjects() {
     if (!response.ok) throw Error("HTTP " + response.status + ": " + (await response.text()).slice(0,200));
     const rows = await response.json();
     projects = rows.map(row => ({...row.data, id:Number(row.data?.id ?? row.id), photos:Array.isArray(row.data?.photos)?row.data.photos:[], files:Array.isArray(row.data?.files)?row.data.files:[]}));
-    render();syncMessage("🟢 เชื่อมต่อ Supabase — " + projects.length + " โครงการ");
+    // Reset stale filters so every project is shown after loading.
+    document.getElementById("statusFilter").value = "";
+    document.getElementById("inspectionFilter").value = "";
+    document.getElementById("search").value = "";
+    render();
+    const withCoordinates = projects.filter(p => validCoordinate(p.lat, p.lng));
+    const withoutCoordinates = projects.filter(p => !validCoordinate(p.lat, p.lng));
+    if (withCoordinates.length) {
+      map.fitBounds(L.latLngBounds(withCoordinates.map(p => [Number(p.lat), Number(p.lng)])), {padding:[35,35], maxZoom:11});
+    }
+    syncMessage("🟢 Supabase: " + projects.length + " โครงการ | มีพิกัด " + withCoordinates.length + " | ไม่มีพิกัด " + withoutCoordinates.length + (projects.length!==22 ? " ⚠️ จำนวนข้อมูลไม่เท่ากับ 22 โปรดตรวจสอบฐานข้อมูล" : ""));
+    if (withoutCoordinates.length) console.warn("โครงการที่ไม่มีพิกัดถูกต้อง:",withoutCoordinates.map(p=>({id:p.id,name:p.name,lat:p.lat,lng:p.lng})));
   } catch(e) {syncMessage("🔴 โหลดข้อมูลไม่สำเร็จ: " + e.message);console.error(e);}
 }
 async function writeProject(data, isNew) {
@@ -1045,8 +1055,9 @@ function render() {
   const checks={};projects.forEach(p=>{if(p.inspectionStatus)checks[p.inspectionStatus]=(checks[p.inspectionStatus]||0)+1;});
   document.getElementById("summary").textContent += " | 🔎 สถานะการตรวจสอบ: "+(Object.entries(checks).map(([k,v])=>k+" "+v).join(" | ")||"ยังไม่ระบุ");
   document.getElementById("stats").textContent =
-    "📍 แสดง " + filtered.length +
-    " โครงการ จากทั้งหมด " + projects.length + " โครงการ";
+    "📍 แสดง " + filtered.length + " โครงการ จากทั้งหมด " + projects.length + " โครงการ" +
+    " | หมุดมีพิกัด " + filtered.filter(p=>validCoordinate(p.lat,p.lng)).length +
+    " | ไม่มีพิกัด " + filtered.filter(p=>!validCoordinate(p.lat,p.lng)).length;
 }
 
 /* ==========================================
