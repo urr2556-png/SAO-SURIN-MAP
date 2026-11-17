@@ -297,6 +297,26 @@ footer {
 .sao-pct{position:absolute;transform:translate(-50%,-50%);font-size:10px;font-weight:800;color:#fff;text-shadow:0 1px 3px #111,0 0 3px #111;pointer-events:none;z-index:3}
 @media(max-width:1150px){.ai-header{grid-template-columns:120px minmax(0,1fr) 175px}.sao-director{grid-column:3;grid-row:1}.ai-head-right{grid-column:1/-1;text-align:right}.sao-logo{width:112px;height:112px}}
 @media(max-width:720px){.ai-header{grid-template-columns:76px minmax(0,1fr)}.sao-director{grid-column:1/-1;grid-row:auto;flex-direction:row;justify-content:center}.sao-director img{height:66px;width:54px}.ai-head-center{padding-left:0}.ai-head-right{grid-column:1/-1}}
+
+/* Director portrait: full-height header presentation, text to the right */
+.ai-header .sao-director{display:flex;flex-direction:row;align-items:center;justify-content:center;text-align:left;gap:14px;min-width:0;max-width:100%;align-self:stretch}
+.ai-header .sao-director img{height:clamp(142px,13vw,190px);width:clamp(112px,10vw,150px);max-height:none;object-fit:cover;object-position:center 17%;flex-shrink:0;border-radius:10px}
+.ai-header .sao-director>div{display:flex;flex-direction:column;gap:7px;min-width:0;max-width:240px}
+.ai-header .sao-director strong{font-size:clamp(12px,1.05vw,17px);line-height:1.45;overflow-wrap:anywhere}
+.ai-header .sao-director small{font-size:clamp(11px,.88vw,14px);line-height:1.4}
+.sao-road-btn{display:inline-flex;align-items:center;justify-content:center;background:#0d766e!important;color:white!important;border-radius:6px;text-decoration:none;padding:9px 12px;font-weight:700;white-space:nowrap}
+.sao-road-btn:hover{background:#075b54!important}
+@media(max-width:1150px){.ai-header .sao-director{flex-direction:row;gap:10px}.ai-header .sao-director img{height:140px;width:106px}}
+@media(max-width:720px){.ai-header .sao-director{grid-column:1/-1;flex-direction:row;justify-content:center;text-align:left}.ai-header .sao-director img{height:120px;width:94px}.ai-header .sao-director strong{font-size:13px}.ai-header .sao-director small{font-size:11px}}
+
+/* V4: move director portrait and accompanying label 5 cm left on wide screens.
+   Smaller screens retain the responsive layout to avoid overlap. */
+@media (min-width: 1500px) {
+  .ai-header .sao-director { transform: translateX(-5cm); }
+}
+@media (min-width: 1151px) and (max-width: 1499px) {
+  .ai-header .sao-director { transform: translateX(-3vw); }
+}
 </style>
 </head>
 
@@ -336,6 +356,7 @@ footer {
 
   <button onclick="exportData()">💾 ส่งออก JSON</button>
   <button type="button" class="sao-admin-btn" onclick="showAdminDeleteInfo()">🔐 ผู้ดูแลระบบ</button>
+  <a class="sao-road-btn" href="https://urr2556-png.github.io/SAO-SURIN-ROAD-MAP/" target="_blank" rel="noopener noreferrer" aria-label="เปิดระบบแผนที่ติดตามถนนชำรุด">🛣️ แผนที่ถนนชำรุด ↗</a>
 
   <button class="hidden" onclick="document.getElementById('importFile').click()">
     📂 นำเข้า JSON
