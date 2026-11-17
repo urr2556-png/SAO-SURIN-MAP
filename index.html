@@ -308,6 +308,15 @@ footer {
 .sao-road-btn:hover{background:#075b54!important}
 @media(max-width:1150px){.ai-header .sao-director{flex-direction:row;gap:10px}.ai-header .sao-director img{height:140px;width:106px}}
 @media(max-width:720px){.ai-header .sao-director{grid-column:1/-1;flex-direction:row;justify-content:center;text-align:left}.ai-header .sao-director img{height:120px;width:94px}.ai-header .sao-director strong{font-size:13px}.ai-header .sao-director small{font-size:11px}}
+
+/* V4: move director portrait and accompanying label 5 cm left on wide screens.
+   Smaller screens retain the responsive layout to avoid overlap. */
+@media (min-width: 1500px) {
+  .ai-header .sao-director { transform: translateX(-5cm); }
+}
+@media (min-width: 1151px) and (max-width: 1499px) {
+  .ai-header .sao-director { transform: translateX(-3vw); }
+}
 </style>
 </head>
 
