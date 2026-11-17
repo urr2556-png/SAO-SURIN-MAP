@@ -372,7 +372,7 @@ footer {
   >
 
   <button onclick="exportData()">💾 ส่งออก JSON</button>
-  <button type="button" class="sao-admin-btn" onclick="showAdminDeleteInfo()">🔐 ผู้ดูแลระบบ</button>
+  <button type="button" class="sao-admin-btn" onclick="showAdminLogin()">🔐 ผู้ดูแลระบบ</button>
   <a class="sao-road-btn" href="https://urr2556-png.github.io/SAO-SURIN-ROAD-MAP/" target="_blank" rel="noopener noreferrer" aria-label="เปิดระบบแผนที่ติดตามถนนชำรุด">🛣️ แผนที่ถนนชำรุด ↗</a>
 
   <button class="hidden" onclick="document.getElementById('importFile').click()">
@@ -506,7 +506,7 @@ footer {
 
   <button
     id="deleteButton"
-    class="danger"
+    class="danger hidden" disabled
     onclick="deleteProject()"
   >
     🗑️ ลบโครงการ
@@ -784,7 +784,22 @@ const SUPABASE_KEY = "sb_publishable_rNguXyOEKArFGQgy4pyXnQ_eWHl8orR";
 const BUCKET = "surin-map-media";
 let projects = [], editingId = null, editingPhotos = [], editingFiles = [];
 let pickingLocation = false, temporaryMarker = null, busy = false;
+const ADMIN_EMAIL = "apipoo_c@oag.go.th";
+const ADMIN_UID = "99989287-27a8-4631-b246-67d75a4d2db2";
+let adminSession = null;
 const apiHeaders = { "apikey": SUPABASE_KEY };
+function authorizedHeaders() {return {...apiHeaders, ...(adminSession?.access_token ? {Authorization:"Bearer "+adminSession.access_token}: {})};}
+function isAdmin(){return !!adminSession?.access_token && adminSession.user?.id===ADMIN_UID && adminSession.user?.email?.toLowerCase()===ADMIN_EMAIL;}
+function requireAdmin(){if(isAdmin())return true;alert("กรุณาเข้าสู่ระบบผู้ดูแลก่อนแก้ไขข้อมูล");showAdminLogin();return false;}
+function showAdminLogin(){document.getElementById("saoAdminDialog").classList.remove("hidden");updateAdminUI();}
+function closeAdminLogin(){document.getElementById("saoAdminDialog").classList.add("hidden");document.getElementById("adminPassword").value="";}
+function updateAdminUI(){const state=document.getElementById("adminState");if(state)state.textContent=isAdmin()?"✅ เข้าสู่ระบบผู้ดูแลแล้ว":"🔒 ยังไม่ได้เข้าสู่ระบบ";document.querySelectorAll(".admin-only").forEach(el=>el.classList.toggle("hidden",!isAdmin()));}
+async function adminLogin(event){event.preventDefault();const pwd=document.getElementById("adminPassword").value;const state=document.getElementById("adminState");state.textContent="กำลังตรวจสอบ...";try{
+const r=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=password",{method:"POST",headers:{...apiHeaders,"Content-Type":"application/json"},body:JSON.stringify({email:ADMIN_EMAIL,password:pwd})});const result=await r.json();if(!r.ok)throw Error(result.msg||result.error_description||result.message||"เข้าสู่ระบบไม่สำเร็จ");
+if(result.user?.id!==ADMIN_UID||result.user?.email?.toLowerCase()!==ADMIN_EMAIL)throw Error("บัญชีนี้ไม่ได้รับสิทธิ์ผู้ดูแล");adminSession=result;updateAdminUI();closeAdminLogin();alert("เข้าสู่ระบบผู้ดูแลสำเร็จ");
+}catch(e){adminSession=null;state.textContent="🔴 "+e.message;updateAdminUI();}finally{document.getElementById("adminPassword").value="";}}
+function adminLogout(){adminSession=null;closeEditor();updateAdminUI();alert("ออกจากระบบแล้ว");}
+
 function syncMessage(message) { document.getElementById("syncStatus").textContent = message; }
 async function loadOnlineProjects() {
   try {
@@ -808,7 +823,7 @@ async function loadOnlineProjects() {
 }
 async function writeProject(data, isNew) {
   const endpoint = SUPABASE_URL + "/rest/v1/surin_map_projects" + (isNew?"":"?id=eq."+encodeURIComponent(String(data.id)));
-  const response = await fetch(endpoint,{method:isNew?"POST":"PATCH",headers:{...apiHeaders,"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(isNew?{id:String(data.id),data}:{data})});
+  const response = await fetch(endpoint,{method:isNew?"POST":"PATCH",headers:{...authorizedHeaders(),"Content-Type":"application/json","Prefer":"return=representation"},body:JSON.stringify(isNew?{id:String(data.id),data}:{data})});
   if (!response.ok) throw Error("บันทึกฐานข้อมูลไม่สำเร็จ HTTP "+response.status+": "+(await response.text()).slice(0,260));
   const rows=await response.json();if(!rows.length) throw Error("ไม่มีแถวข้อมูลถูกบันทึก กรุณาตรวจสอบสิทธิ์ RLS");
 }
@@ -818,7 +833,7 @@ async function uploadMedia(file) {
   if(file.size>10*1024*1024) throw Error("ไฟล์เกิน 10 MB: "+file.name);
   const ext=(file.name.split(".").pop()||"bin").toLowerCase();
   const path="projects/"+crypto.randomUUID()+"."+ext;
-  const res=await fetch(SUPABASE_URL+"/storage/v1/object/"+BUCKET+"/"+path,{method:"POST",headers:{...apiHeaders,"Content-Type":file.type,"x-upsert":"false"},body:file});
+  const res=await fetch(SUPABASE_URL+"/storage/v1/object/"+BUCKET+"/"+path,{method:"POST",headers:{...authorizedHeaders(),"Content-Type":file.type,"x-upsert":"false"},body:file});
   if(!res.ok) throw Error("อัปโหลด "+file.name+" ไม่สำเร็จ: "+(await res.text()).slice(0,200));
   return {name:file.name,url:SUPABASE_URL+"/storage/v1/object/public/"+BUCKET+"/"+path};
 }
@@ -1210,6 +1225,7 @@ function closeImage() {
 ========================================== */
 
 function newProject() {
+  
 
   editingId = null;
   editingPhotos = [];editingFiles = [];editingStagePhotos={before:[],during:[],after:[]};
@@ -1254,6 +1270,7 @@ function newProject() {
 ========================================== */
 
 function editProject(id) {
+  
 
   const p = projects.find(x => x.id === id);
 
@@ -1284,8 +1301,7 @@ function editProject(id) {
   document.getElementById("fLat").value = p.lat ?? "";
   document.getElementById("fLng").value = p.lng ?? "";
 
-  document.getElementById("deleteButton")
-    .classList.add("hidden"); // ลบได้เฉพาะผู้ดูแลผ่านระบบยืนยันตัวตน (ยังไม่เปิดใช้)
+  document.getElementById("deleteButton").classList.add("hidden");
 
   renderEditPhotos();renderEditFiles();renderStagePhotos();
 
@@ -1350,6 +1366,7 @@ map.on("click",e=>{if(pickingLocation){placeTemporary(e.latlng);pickingLocation=
 ========================================== */
 
 async function saveProject(){
+  
   if(busy)return;
   const name=document.getElementById("fName").value.trim(),latText=document.getElementById("fLat").value,lngText=document.getElementById("fLng").value;
   if(!name){alert("กรุณาระบุชื่อโครงการ");return;}
@@ -1379,8 +1396,7 @@ async function saveProject(){
    ลบโครงการ
 ========================================== */
 
-function showAdminDeleteInfo(){alert("ปุ่มสำหรับผู้ดูแลระบบพร้อมแสดงแล้ว แต่ยังไม่สามารถลบข้อมูลได้จนกว่าจะติดตั้ง Supabase Auth และนโยบาย DELETE สำหรับผู้ดูแลที่ได้รับอนุญาตเท่านั้น เพื่อป้องกันการลบโดยบุคคลทั่วไป");}
-function deleteProject(){alert("การลบโครงการสงวนสิทธิ์สำหรับผู้ดูแลระบบ และยังไม่เปิดใช้จนกว่าจะติดตั้งระบบยืนยันตัวตนและสิทธิ์ DELETE ที่ฐานข้อมูล");}
+async function deleteProject(){alert("ระบบไม่อนุญาตให้ลบโครงการ");}
 
 /* ==========================================
    ส่งออกข้อมูล JSON
@@ -1437,5 +1453,7 @@ loadOnlineProjects();
 })();
 </script>
 
+<section id="saoAdminDialog" class="hidden" role="dialog" aria-modal="true" aria-label="เข้าสู่ระบบผู้ดูแล" style="position:fixed;z-index:99999;inset:0;background:#0009;display:flex;align-items:center;justify-content:center;padding:16px"><form onsubmit="adminLogin(event)" style="background:white;color:#222;max-width:420px;width:100%;padding:24px;border-radius:14px;box-shadow:0 8px 40px #0005"><h2>🔐 ผู้ดูแลระบบ</h2><p>บัญชี: apipoo_c@oag.go.th</p><label for="adminPassword">รหัสผ่าน Supabase Auth</label><input id="adminPassword" type="password" required autocomplete="current-password" style="width:100%;padding:12px;margin:10px 0"><p id="adminState">🔒 ยังไม่ได้เข้าสู่ระบบ</p><button type="submit">เข้าสู่ระบบ</button> <button type="button" onclick="closeAdminLogin()">ปิด</button> <button type="button" class="admin-only hidden" onclick="adminLogout()">ออกจากระบบ</button><p style="font-size:12px;color:#666">ใช้บัญชีที่ตั้งรหัสผ่านไว้แล้วใน Supabase Authentication เท่านั้น ไม่ใช้ OTP หรือ SMTP</p></form></section>
+<style>#saoAdminDialog.hidden,#saoAdminDialog .hidden{display:none!important}</style>
 </body>
 </html>
