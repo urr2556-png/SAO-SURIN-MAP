@@ -246,6 +246,26 @@ footer {
 .sao-hover-row { margin: 5px 0; overflow-wrap: anywhere; }
 .sao-hover-row strong { color: #253b59; }
 
+
+/* Dashboard occupies one fifth of map area on desktop */
+.sao-layout{display:grid;grid-template-columns:minmax(0,4fr) minmax(280px,1fr);align-items:stretch;gap:0}
+.sao-layout #map{height:78vh;min-height:640px}
+.sao-dashboard{height:78vh;min-height:640px;overflow-y:auto;background:#f8fafc;border-left:1px solid #dce5f0;padding:12px}
+.sao-dashboard h2{font-size:16px;margin:4px 0 12px;color:#123967}
+.sao-chart{background:white;border:1px solid #dce5f0;border-radius:12px;padding:12px;margin-bottom:14px;box-shadow:0 2px 6px #0d2e4d0d}
+.sao-chart h3{font-size:14px;line-height:1.5;margin:0 0 8px}
+.sao-pie{height:160px;width:160px;max-width:100%;border-radius:50%;margin:8px auto;position:relative}
+.sao-pie:after{content:'';position:absolute;inset:29%;background:white;border-radius:50%}
+.sao-legend{font-size:12px;line-height:1.5}
+.sao-legend-row{display:grid;grid-template-columns:10px 1fr;gap:7px;padding:7px 0;border-top:1px solid #edf1f5}
+.sao-dot{width:10px;height:10px;border-radius:3px;margin-top:4px}
+.sao-legend-row strong{display:block}
+.sao-legend-row small{display:block;color:#526174}
+.sao-photo-section{border:1px solid #dce5f0;border-radius:10px;padding:12px;background:#f9fbff}
+.sao-photo-section h4{margin:0 0 7px}
+.sao-photo-section input{max-width:100%}
+@media(max-width:900px){.sao-layout{display:block}.sao-layout #map{height:60vh;min-height:420px}.sao-dashboard{height:auto;min-height:0;max-height:none;border-left:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}.sao-dashboard h2{grid-column:1/-1}#saoCharts{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}.sao-chart{margin:0}}
+
 </style>
 </head>
 
@@ -269,16 +289,9 @@ footer {
     ➕ เพิ่มหมุดโครงการ
   </button>
 
-  <select id="statusFilter" onchange="render()">
-    <option value="">ทุกสถานะ</option>
-    <option value="แก้ไขแล้ว">แก้ไขและใช้ประโยชน์แล้ว</option>
-    <option value="กำลังแก้ไข">อยู่ระหว่างแก้ไข</option>
-    <option value="ยังไม่ดำเนินการแก้ไข">ยังไม่ดำเนินการแก้ไข</option>
-    <option value="ติดตาม">อยู่ระหว่างติดตาม (ข้อมูลเดิม)</option>
-    <option value="วางแผน">วางแผนตรวจสอบ</option>
-  </select>
+  <select id="statusFilter" onchange="render()"><option value="">ทุกสถานะ</option><option value="ยังไม่แก้ไข">ยังไม่แก้ไข</option><option value="อยู่ระหว่างแก้ไข">อยู่ระหว่างแก้ไข</option><option value="แก้ไขบางส่วน">แก้ไขบางส่วน</option><option value="แก้ไขแล้ว 100%">แก้ไขแล้ว 100%</option><option value="วางแผน">วางแผนตรวจสอบ (ข้อมูลเดิม)</option><option value="ติดตาม">อยู่ระหว่างติดตาม (ข้อมูลเดิม)</option><option value="กำลังแก้ไข">กำลังแก้ไข (ข้อมูลเดิม)</option><option value="แก้ไขแล้ว">แก้ไขแล้ว (ข้อมูลเดิม)</option><option value="ยังไม่ดำเนินการแก้ไข">ยังไม่ดำเนินการแก้ไข (ข้อมูลเดิม)</option></select>
 
-  <select id="inspectionFilter" onchange="render()"><option value="">ทุกสถานะการตรวจสอบ</option><option value="ตรวจสอบเบื้องต้น">ตรวจสอบเบื้องต้น</option><option value="อยู่ระหว่างตรวจสอบ">อยู่ระหว่างตรวจสอบ</option><option value="ตรวจสอบแล้วเสร็จ 100%">ตรวจสอบแล้วเสร็จ 100%</option><option value="อยู่ระหว่างติดตามผล">อยู่ระหว่างติดตามผล</option><option value="อยู่ระหว่างดำเนินการวินัย">อยู่ระหว่างดำเนินการวินัย</option><option value="อยู่ระหว่างดำเนินการอาญา">อยู่ระหว่างดำเนินการอาญา</option><option value="อยู่ระหว่างดำเนินการปกครอง">อยู่ระหว่างดำเนินการปกครอง</option></select>
+  <select id="inspectionFilter" onchange="render()"><option value="">ทุกสถานะการตรวจสอบ</option><option value="วางแผนการตรวจ">วางแผนการตรวจ</option><option value="ตรวจสอบข้อมูลเบื้องต้น">ตรวจสอบข้อมูลเบื้องต้น</option><option value="ดำเนินการตรวจสอบ">ดำเนินการตรวจสอบ</option><option value="ดำเนินการตรวจสอบแล้ว">ดำเนินการตรวจสอบแล้ว</option><option value="อยู่ระหว่างรับฟังคำชี้แจง">อยู่ระหว่างรับฟังคำชี้แจง</option><option value="อยู่ระหว่างติดตามผล">อยู่ระหว่างติดตามผล</option><option value="ส่งให้หน่วยงาน ป.ป.ช./ป.ป.ท./อื่น ๆ">ส่งให้หน่วยงาน ป.ป.ช./ป.ป.ท./อื่น ๆ</option><option value="ตรวจสอบเบื้องต้น">ตรวจสอบเบื้องต้น (ข้อมูลเดิม)</option><option value="อยู่ระหว่างตรวจสอบ">อยู่ระหว่างตรวจสอบ (ข้อมูลเดิม)</option><option value="ตรวจสอบแล้วเสร็จ 100%">ตรวจสอบแล้วเสร็จ 100% (ข้อมูลเดิม)</option><option value="อยู่ระหว่างดำเนินการวินัย">อยู่ระหว่างดำเนินการวินัย (ข้อมูลเดิม)</option><option value="อยู่ระหว่างดำเนินการอาญา">อยู่ระหว่างดำเนินการอาญา (ข้อมูลเดิม)</option><option value="อยู่ระหว่างดำเนินการปกครอง">อยู่ระหว่างดำเนินการปกครอง (ข้อมูลเดิม)</option></select>
 
   <input
     id="search"
@@ -302,7 +315,7 @@ footer {
 </div>
 
 <div id="syncStatus" class="notice" role="status">กำลังเชื่อมต่อฐานข้อมูล...</div>
-<div id="map"></div>
+<div class="sao-layout"><div id="map"></div><aside class="sao-dashboard" aria-label="กราฟสรุปโครงการ"><h2>📊 ภาพรวมโครงการ</h2><div id="saoCharts"></div></aside></div>
 
 <div class="stats" id="stats"></div>
 <div class="stats" id="summary"></div>
@@ -339,6 +352,7 @@ footer {
       <input id="fAgency">
     </div>
 
+<div class="field full"><label>ประเภทหน่วยงาน (ใช้สำหรับกราฟ)</label><select id="fAgencyType"><option value="">— ให้ระบบจำแนกจากชื่อหน่วยงาน / ยังไม่ระบุ —</option><option value="องค์การบริหารส่วนตำบล">องค์การบริหารส่วนตำบล</option><option value="เทศบาลตำบล">เทศบาลตำบล</option><option value="เทศบาลเมือง/นคร">เทศบาลเมือง/นคร</option><option value="องค์การบริหารส่วนจังหวัด">องค์การบริหารส่วนจังหวัด</option><option value="โรงพยาบาล/รพ.สต.">โรงพยาบาล/รพ.สต.</option><option value="มหาวิทยาลัย/วิทยาลัย/โรงเรียน">มหาวิทยาลัย/วิทยาลัย/โรงเรียน</option><option value="ราชการในจังหวัด">ราชการในจังหวัด</option><option value="ราชการกรม/กระทรวง">ราชการกรม/กระทรวง</option><option value="ราชการอื่น ๆ">ราชการอื่น ๆ</option></select></div>
     <div class="field">
       <label>งบประมาณ</label>
       <input id="fBudget" placeholder="เช่น 2.67 ล้านบาท">
@@ -346,13 +360,7 @@ footer {
 
     <div class="field">
       <label>สถานะ</label>
-      <select id="fStatus">
-        <option value="แก้ไขแล้ว">แก้ไขและใช้ประโยชน์แล้ว</option>
-        <option value="กำลังแก้ไข">อยู่ระหว่างแก้ไข</option>
-        <option value="ยังไม่ดำเนินการแก้ไข">ยังไม่ดำเนินการแก้ไข</option>
-    <option value="ติดตาม">อยู่ระหว่างติดตาม (ข้อมูลเดิม)</option>
-        <option value="วางแผน">วางแผนตรวจสอบ</option>
-      </select>
+      <select id="fStatus"><option value="ยังไม่แก้ไข">ยังไม่แก้ไข</option><option value="อยู่ระหว่างแก้ไข">อยู่ระหว่างแก้ไข</option><option value="แก้ไขบางส่วน">แก้ไขบางส่วน</option><option value="แก้ไขแล้ว 100%">แก้ไขแล้ว 100%</option><option value="วางแผน">วางแผนตรวจสอบ (ข้อมูลเดิม)</option><option value="ติดตาม">อยู่ระหว่างติดตาม (ข้อมูลเดิม)</option><option value="กำลังแก้ไข">กำลังแก้ไข (ข้อมูลเดิม)</option><option value="แก้ไขแล้ว">แก้ไขแล้ว (ข้อมูลเดิม)</option><option value="ยังไม่ดำเนินการแก้ไข">ยังไม่ดำเนินการแก้ไข (ข้อมูลเดิม)</option></select>
     </div>
 
     <div class="field">
@@ -382,7 +390,7 @@ footer {
     <div class="field full"><label>ปีงบประมาณ</label><input id="fFiscalYear" type="text"></div>
     <div class="field full"><label>วันที่เริ่มสัญญา</label><input id="fStartDate" type="date"></div>
     <div class="field full"><label>วันที่สิ้นสุดสัญญา</label><input id="fEndDate" type="date"></div>
-    <div class="field full"><label>สถานะการตรวจสอบ</label><select id="fInspectionStatus"><option value="">— ยังไม่ระบุ —</option><option value="ตรวจสอบเบื้องต้น">ตรวจสอบเบื้องต้น</option><option value="อยู่ระหว่างตรวจสอบ">อยู่ระหว่างตรวจสอบ</option><option value="ตรวจสอบแล้วเสร็จ 100%">ตรวจสอบแล้วเสร็จ 100%</option><option value="อยู่ระหว่างติดตามผล">อยู่ระหว่างติดตามผล</option><option value="อยู่ระหว่างดำเนินการวินัย">อยู่ระหว่างดำเนินการวินัย</option><option value="อยู่ระหว่างดำเนินการอาญา">อยู่ระหว่างดำเนินการอาญา</option><option value="อยู่ระหว่างดำเนินการปกครอง">อยู่ระหว่างดำเนินการปกครอง</option></select></div>
+    <div class="field full"><label>สถานะการตรวจสอบ</label><select id="fInspectionStatus"><option value="">— ยังไม่ระบุ —</option><option value="วางแผนการตรวจ">วางแผนการตรวจ</option><option value="ตรวจสอบข้อมูลเบื้องต้น">ตรวจสอบข้อมูลเบื้องต้น</option><option value="ดำเนินการตรวจสอบ">ดำเนินการตรวจสอบ</option><option value="ดำเนินการตรวจสอบแล้ว">ดำเนินการตรวจสอบแล้ว</option><option value="อยู่ระหว่างรับฟังคำชี้แจง">อยู่ระหว่างรับฟังคำชี้แจง</option><option value="อยู่ระหว่างติดตามผล">อยู่ระหว่างติดตามผล</option><option value="ส่งให้หน่วยงาน ป.ป.ช./ป.ป.ท./อื่น ๆ">ส่งให้หน่วยงาน ป.ป.ช./ป.ป.ท./อื่น ๆ</option><option value="ตรวจสอบเบื้องต้น">ตรวจสอบเบื้องต้น (ข้อมูลเดิม)</option><option value="อยู่ระหว่างตรวจสอบ">อยู่ระหว่างตรวจสอบ (ข้อมูลเดิม)</option><option value="ตรวจสอบแล้วเสร็จ 100%">ตรวจสอบแล้วเสร็จ 100% (ข้อมูลเดิม)</option><option value="อยู่ระหว่างดำเนินการวินัย">อยู่ระหว่างดำเนินการวินัย (ข้อมูลเดิม)</option><option value="อยู่ระหว่างดำเนินการอาญา">อยู่ระหว่างดำเนินการอาญา (ข้อมูลเดิม)</option><option value="อยู่ระหว่างดำเนินการปกครอง">อยู่ระหว่างดำเนินการปกครอง (ข้อมูลเดิม)</option></select></div>
     <div class="field full"><label>ข้อมูลโครงการอื่น ๆ</label><textarea id="fOtherInfo" rows="3"></textarea></div>
     <div class="field full"><label>สาเหตุที่โครงการไม่สามารถใช้ประโยชน์ได้</label><textarea id="fCause" rows="3"></textarea></div>
     <div class="field full"><label>ผลกระทบ / ความเสียหาย</label><textarea id="fImpact" rows="3"></textarea></div>
@@ -393,8 +401,12 @@ footer {
     <div class="field full"><label>สถานะการยืนยันความเสียหาย</label><select id="fDamageVerification"><option value="">— ยังไม่ระบุ —</option><option value="ข้อมูลที่ประชาชนแจ้ง">ข้อมูลที่ประชาชนแจ้ง</option><option value="อยู่ระหว่างประเมิน">อยู่ระหว่างประเมิน</option><option value="ตรวจสอบยืนยันแล้ว">ตรวจสอบยืนยันแล้ว</option></select></div>
     <div class="field full"><label>ลิงก์ Google Maps (ไม่บังคับ)</label><input id="fMapUrl" type="text"></div>
 
+    <h3 class="field full">📷 ภาพถ่ายเปรียบเทียบ 3 ระยะ</h3>
+    <div class="field full sao-photo-section"><h4>ช่องที่ 1 — รูปภาพก่อนแก้ไข/ตรวจสอบ</h4><input id="fPhotosBefore" type="file" accept="image/jpeg,image/png,image/webp" multiple onchange="addStagePhotos(event,'before')"><div id="editPhotosBefore" class="photo-grid"></div></div>
+    <div class="field full sao-photo-section"><h4>ช่องที่ 2 — รูปภาพระหว่างแก้ไข/ตรวจสอบ</h4><input id="fPhotosDuring" type="file" accept="image/jpeg,image/png,image/webp" multiple onchange="addStagePhotos(event,'during')"><div id="editPhotosDuring" class="photo-grid"></div></div>
+    <div class="field full sao-photo-section"><h4>ช่องที่ 3 — รูปภาพหลังดำเนินการแก้ไข/ตรวจสอบ</h4><input id="fPhotosAfter" type="file" accept="image/jpeg,image/png,image/webp" multiple onchange="addStagePhotos(event,'after')"><div id="editPhotosAfter" class="photo-grid"></div></div>
     <div class="field full">
-      <label>เพิ่มหรือเปลี่ยนรูปภาพ</label>
+      <label>รูปภาพเดิม / ภาพทั่วไป (เก็บไว้เพื่อไม่ให้ข้อมูลเดิมหาย)</label>
       <input
         id="fPhotos"
         type="file"
@@ -787,7 +799,7 @@ function markerIcon(number, color="#e83e8c") {
 function projectHoverHTML(p) {
   const rows = [
     ["ตำบล", p.tambon], ["อำเภอ", p.district], ["จังหวัด", p.province || "สุรินทร์"],
-    ["หน่วยงาน", p.agency], ["งบประมาณ", p.budget],
+    ["หน่วยงาน", p.agency], ["ประเภทหน่วยงาน", saoAgency(p)], ["งบประมาณ", p.budget],
     ["สถานะไม่ใช้ประโยชน์", p.status], ["สถานะการตรวจสอบ", p.inspectionStatus],
     ["สาเหตุ", p.cause], ["ผลกระทบ / ความเสียหาย", p.impact],
     ["ข้อมูลอื่น ๆ", p.otherInfo || p.detail]
@@ -798,9 +810,71 @@ function projectHoverHTML(p) {
       escapeHTML(String(value ?? '').trim() || 'ยังไม่ระบุ')+'</div>').join('') + '</div>';
 }
 
+
+const SAO_STATUS=["ยังไม่แก้ไข","อยู่ระหว่างแก้ไข","แก้ไขบางส่วน","แก้ไขแล้ว 100%"];
+const SAO_INSPECTION=["วางแผนการตรวจ","ตรวจสอบข้อมูลเบื้องต้น","ดำเนินการตรวจสอบ","ดำเนินการตรวจสอบแล้ว","อยู่ระหว่างรับฟังคำชี้แจง","อยู่ระหว่างติดตามผล","ส่งให้หน่วยงาน ป.ป.ช./ป.ป.ท./อื่น ๆ"];
+const SAO_AGENCIES=["องค์การบริหารส่วนตำบล","เทศบาลตำบล","เทศบาลเมือง/นคร","องค์การบริหารส่วนจังหวัด","โรงพยาบาล/รพ.สต.","มหาวิทยาลัย/วิทยาลัย/โรงเรียน","ราชการในจังหวัด","ราชการกรม/กระทรวง","ราชการอื่น ๆ"];
+const SAO_COLORS=["#e85d54","#f2ae3e","#4089d5","#24a477","#9b6cd3","#36a7a9","#d56f9c","#8c6b4e","#667b90","#c0c7d0"];
+function saoBudget(raw){
+  const t=String(raw??"").replace(/,/g,"").trim();
+  const m=t.match(/(\d+(?:\.\d+)?)/);if(!m)return null;
+  const n=Number(m[1]);if(!Number.isFinite(n))return null;
+  if(/พันล้าน/.test(t))return n*1e9;
+  if(/ล้าน/.test(t))return n*1e6;
+  if(/แสน/.test(t))return n*1e5;
+  if(/หมื่น/.test(t))return n*1e4;
+  if(/พัน/.test(t))return n*1e3;
+  if(/บาท/.test(t)||/^\d+(?:\.\d+)?$/.test(t))return n;
+  return null;
+}
+function saoStatus(p){return ({"ยังไม่ดำเนินการแก้ไข":"ยังไม่แก้ไข","กำลังแก้ไข":"อยู่ระหว่างแก้ไข","แก้ไขแล้ว":"แก้ไขแล้ว 100%"})[p.status]||p.status||"ไม่ระบุ/ข้อมูลเดิม";}
+function saoInspection(p){return ({"ตรวจสอบเบื้องต้น":"ตรวจสอบข้อมูลเบื้องต้น","อยู่ระหว่างตรวจสอบ":"ดำเนินการตรวจสอบ","ตรวจสอบแล้วเสร็จ 100%":"ดำเนินการตรวจสอบแล้ว"})[p.inspectionStatus]||p.inspectionStatus||"ไม่ระบุ/ข้อมูลเดิม";}
+function saoAgency(p){
+  if(SAO_AGENCIES.includes(p.agencyType))return p.agencyType;
+  const t=String(p.agency||"");if(!t.trim())return "ไม่ระบุ/จำแนกไม่ได้";
+  if(/อบต\.|องค์การบริหารส่วนตำบล/.test(t))return SAO_AGENCIES[0];
+  if(/เทศบาลตำบล|ทต\./.test(t))return SAO_AGENCIES[1];
+  if(/เทศบาลเมือง|เทศบาลนคร/.test(t))return SAO_AGENCIES[2];
+  if(/อบจ\.|องค์การบริหารส่วนจังหวัด/.test(t))return SAO_AGENCIES[3];
+  if(/โรงพยาบาล|รพ\.สต\.|รพสต/.test(t))return SAO_AGENCIES[4];
+  if(/มหาวิทยาลัย|วิทยาลัย|โรงเรียน/.test(t))return SAO_AGENCIES[5];
+  if(/สำนักงาน.*จังหวัด|ที่ทำการปกครอง|จังหวัดสุรินทร์/.test(t))return SAO_AGENCIES[6];
+  if(/กรม|กระทรวง|สำนัก.*ชลประทาน|สำนักงานชลประทาน/.test(t))return SAO_AGENCIES[7];
+  return "ไม่ระบุ/จำแนกไม่ได้";
+}
+function saoChart(title,categories,selector){
+  const counts=new Map(categories.map(c=>[c,{count:0,budget:0,missing:0}]));
+  counts.set("ไม่ระบุ/ข้อมูลเดิม",{count:0,budget:0,missing:0});
+  counts.set("ไม่ระบุ/จำแนกไม่ได้",{count:0,budget:0,missing:0});
+  for(const p of projects){const k=selector(p);if(!counts.has(k))counts.set(k,{count:0,budget:0,missing:0});const d=counts.get(k);d.count++;const b=saoBudget(p.budget);if(b===null)d.missing++;else d.budget+=b;}
+  const rows=[...counts].filter(([k,v])=>v.count>0||categories.includes(k));
+  const total=projects.length;
+  const palette=rows.map((r,i)=>SAO_COLORS[i%SAO_COLORS.length]);
+  let acc=0;const slices=rows.filter(([k,v])=>v.count).map(([k,v])=>{const start=acc;acc+=v.count/Math.max(total,1)*100;return `${palette[rows.findIndex(x=>x[0]===k)]} ${start}% ${acc}%`;});
+  const pie=document.createElement("div");pie.className="sao-pie";pie.style.background=total?`conic-gradient(${slices.join(",")})`:"#e5e7eb";
+  const card=document.createElement("section");card.className="sao-chart";
+  const h=document.createElement("h3");h.textContent=title;card.append(h,pie);
+  const legend=document.createElement("div");legend.className="sao-legend";
+  rows.forEach(([k,v],i)=>{
+    const row=document.createElement("div");row.className="sao-legend-row";
+    const dot=document.createElement("span");dot.className="sao-dot";dot.style.background=palette[i];
+    const body=document.createElement("div");const strong=document.createElement("strong");strong.textContent=k;
+    const small=document.createElement("small");small.textContent=`${v.count.toLocaleString('th-TH')} โครงการ · ${total?(100*v.count/total).toFixed(1):'0.0'}% · งบ ${v.budget.toLocaleString('th-TH',{maximumFractionDigits:2})} บาท${v.missing?' (ไม่ทราบงบ '+v.missing+' รายการ)':''}`;
+    body.append(strong,small);row.append(dot,body);legend.append(row);
+  });card.append(legend);return card;
+}
+function renderSaoCharts(){
+  const target=document.getElementById("saoCharts");if(!target)return;target.replaceChildren(
+    saoChart("3.1 สถานะการแก้ไขโครงการ",SAO_STATUS,saoStatus),
+    saoChart("3.2 สถานะการตรวจสอบ",SAO_INSPECTION,saoInspection),
+    saoChart("3.3 ประเภทหน่วยงาน",SAO_AGENCIES,saoAgency)
+  );
+}
+
 function render() {
 
   markerLayer.clearLayers();
+  renderSaoCharts();
 
   const filter = document.getElementById("statusFilter").value;
   const inspectionFilter = document.getElementById("inspectionFilter").value;
@@ -861,7 +935,7 @@ function render() {
 ========================================== */
 
 
-const EXTRA_FIELDS = [("budgetSource", "ที่มางบประมาณ"), ("budgetAgency", "หน่วยงานจัดสรรงบประมาณ"), ("projectOrigin", "ที่มาโครงการ"), ("contractNumber", "เลขที่สัญญา"), ("contractor", "ผู้รับจ้าง"), ("fiscalYear", "ปีงบประมาณ"), ("startDate", "วันที่เริ่มสัญญา"), ("endDate", "วันที่สิ้นสุดสัญญา"), ("inspectionStatus", "สถานะการตรวจสอบ"), ("otherInfo", "ข้อมูลโครงการอื่น ๆ"), ("cause", "สาเหตุที่โครงการไม่สามารถใช้ประโยชน์ได้"), ("impact", "ผลกระทบ / ความเสียหาย"), ("damageAmount", "มูลค่าความเสียหาย (บาท)"), ("affectedPeople", "ประชาชนที่ได้รับผลกระทบ (คน/ครัวเรือน)"), ("affectedArea", "พื้นที่ได้รับผลกระทบ"), ("damageDate", "วันที่พบความเสียหาย"), ("damageVerification", "สถานะการยืนยันความเสียหาย"), ("mapUrl", "ลิงก์ Google Maps (ไม่บังคับ)")];
+const EXTRA_FIELDS = [("budgetSource", "ที่มางบประมาณ"), ("budgetAgency", "หน่วยงานจัดสรรงบประมาณ"), ("projectOrigin", "ที่มาโครงการ"), ("contractNumber", "เลขที่สัญญา"), ("contractor", "ผู้รับจ้าง"), ("fiscalYear", "ปีงบประมาณ"), ("startDate", "วันที่เริ่มสัญญา"), ("endDate", "วันที่สิ้นสุดสัญญา"), ("inspectionStatus", "สถานะการตรวจสอบ"), ("agencyType", "ประเภทหน่วยงาน"), ("otherInfo", "ข้อมูลโครงการอื่น ๆ"), ("cause", "สาเหตุที่โครงการไม่สามารถใช้ประโยชน์ได้"), ("impact", "ผลกระทบ / ความเสียหาย"), ("damageAmount", "มูลค่าความเสียหาย (บาท)"), ("affectedPeople", "ประชาชนที่ได้รับผลกระทบ (คน/ครัวเรือน)"), ("affectedArea", "พื้นที่ได้รับผลกระทบ"), ("damageDate", "วันที่พบความเสียหาย"), ("damageVerification", "สถานะการยืนยันความเสียหาย"), ("mapUrl", "ลิงก์ Google Maps (ไม่บังคับ)")];
 function extraDetailRows(p){
   return EXTRA_FIELDS.filter(([key])=>key!=="mapUrl" && p[key]!==undefined && p[key]!==null && String(p[key]).trim()!=="")
     .map(([key,label])=>`<div class="detail-row"><b>${escapeHTML(label)}:</b> ${escapeHTML(p[key])}</div>`).join("");
@@ -951,7 +1025,17 @@ function showDetail(id) {
     `;
   });
 
-  html += `</div><h3>📎 เอกสารแนบ</h3>`;
+  html += `</div>`;
+
+  for(const [key,label] of [["photosBefore","📷 ก่อนแก้ไข/ตรวจสอบ"],["photosDuring","🛠️ ระหว่างแก้ไข/ตรวจสอบ"],["photosAfter","✅ หลังดำเนินการแก้ไข/ตรวจสอบ"]]){
+    html+='<h3>'+label+'</h3><div class="photo-grid">';
+    const items=Array.isArray(p[key])?p[key]:[];
+    if(!items.length)html+='<p>ยังไม่มีรูปภาพ</p>';
+    items.forEach(url=>{if(typeof url==="string"&&/^https:\/\//.test(url))html+='<a href="'+escapeHTML(url)+'" target="_blank" rel="noopener noreferrer"><img src="'+escapeHTML(url)+'" alt="'+label+'" loading="lazy"></a>';});
+    html+='</div>';
+  }
+
+  html += `<h3>📎 เอกสารแนบ</h3>`;
   (p.files||[]).forEach(f=>{if(f&&/^https:\/\//.test(f.url||""))html+=`<div class="detail-row"><a href="${escapeHTML(f.url)}" target="_blank" rel="noopener noreferrer">📄 ${escapeHTML(f.name||"ไฟล์แนบ")}</a></div>`;});
   html += `
     <br>
@@ -998,7 +1082,7 @@ function closeImage() {
 function newProject() {
 
   editingId = null;
-  editingPhotos = [];editingFiles = [];
+  editingPhotos = [];editingFiles = [];editingStagePhotos={before:[],during:[],after:[]};
 
   document.getElementById("editorTitle").textContent =
     "➕ เพิ่มโครงการใหม่";
@@ -1017,14 +1101,16 @@ function newProject() {
   });
 
   document.getElementById("fBudgetSource").value="";document.getElementById("fBudgetAgency").value="";document.getElementById("fProjectOrigin").value="";document.getElementById("fContractNumber").value="";document.getElementById("fContractor").value="";document.getElementById("fFiscalYear").value="";document.getElementById("fStartDate").value="";document.getElementById("fEndDate").value="";document.getElementById("fInspectionStatus").value="";document.getElementById("fOtherInfo").value="";document.getElementById("fCause").value="";document.getElementById("fImpact").value="";document.getElementById("fDamageAmount").value="";document.getElementById("fAffectedPeople").value="";document.getElementById("fAffectedArea").value="";document.getElementById("fDamageDate").value="";document.getElementById("fDamageVerification").value="";document.getElementById("fMapUrl").value="";
-  document.getElementById("fStatus").value = "วางแผน";
+  document.getElementById("fStatus").value = "ยังไม่แก้ไข";
+  document.getElementById("fAgencyType").value="";
+  ["Before","During","After"].forEach(k=>document.getElementById("fPhotos"+k).value="");
   document.getElementById("fColor").value = "#e83e8c";
   document.getElementById("fPhotos").value="";document.getElementById("fFiles").value="";
 
   document.getElementById("deleteButton")
     .classList.add("hidden");
 
-  renderEditPhotos();renderEditFiles();
+  renderEditPhotos();renderEditFiles();renderStagePhotos();
 
   document.getElementById("editor")
     .classList.remove("hidden");
@@ -1046,7 +1132,7 @@ function editProject(id) {
   closeDetail();
 
   editingId = id;
-  editingPhotos = [...(p.photos || [])];editingFiles=[...(p.files||[])];
+  editingPhotos = [...(p.photos || [])];editingFiles=[...(p.files||[])];editingStagePhotos={before:[...(p.photosBefore||[])],during:[...(p.photosDuring||[])],after:[...(p.photosAfter||[])]};
 
   document.getElementById("editorTitle").textContent =
     "✏️ แก้ไขโครงการหมายเลข " + id;
@@ -1055,6 +1141,7 @@ function editProject(id) {
   document.getElementById("fTambon").value = p.tambon || "";
   document.getElementById("fDistrict").value = p.district || "";
   document.getElementById("fAgency").value = p.agency || "";
+  document.getElementById("fAgencyType").value=p.agencyType||"";
   document.getElementById("fBudget").value = p.budget || "";
   document.getElementById("fStatus").value = p.status || "วางแผน";
   document.getElementById("fDetail").value = p.detail || "";
@@ -1066,7 +1153,7 @@ function editProject(id) {
   document.getElementById("deleteButton")
     .classList.add("hidden"); // ลบได้เฉพาะผู้ดูแลผ่านระบบยืนยันตัวตน (ยังไม่เปิดใช้)
 
-  renderEditPhotos();renderEditFiles();
+  renderEditPhotos();renderEditFiles();renderStagePhotos();
 
   document.getElementById("editor")
     .classList.remove("hidden");
@@ -1083,6 +1170,28 @@ function closeEditor() {
 /* ==========================================
    จัดการรูปภาพ
 ========================================== */
+
+
+let editingStagePhotos={before:[],during:[],after:[]};
+function addStagePhotos(event,stage){
+  for(const f of Array.from(event.target.files||[])){
+    if(!["image/jpeg","image/png","image/webp"].includes(f.type)||f.size>10*1024*1024){alert("รองรับ JPG/PNG/WebP ไม่เกิน 10 MB ต่อไฟล์");continue;}
+    editingStagePhotos[stage].push({pending:f,preview:URL.createObjectURL(f)});
+  }
+  event.target.value="";renderStagePhotos();
+}
+function renderStagePhotos(){
+  for(const [stage,suffix] of [["before","Before"],["during","During"],["after","After"]]){
+    const box=document.getElementById("editPhotos"+suffix);box.innerHTML="";
+    (editingStagePhotos[stage]||[]).forEach((photo,i)=>{
+      const div=document.createElement("div");div.className="photo-item";
+      const img=document.createElement("img");img.src=typeof photo==="string"?photo:photo.preview;
+      const btn=document.createElement("button");btn.type="button";btn.textContent="เอาออก";
+      btn.onclick=()=>{editingStagePhotos[stage].splice(i,1);renderStagePhotos();};
+      div.append(img,btn);box.append(div);
+    });
+  }
+}
 
 async function addPhotos(event) {
   const files=Array.from(event.target.files||[]);
@@ -1114,9 +1223,17 @@ async function saveProject(){
   // รหัส UUID-like เพื่อหลีกเลี่ยงการชนกันเมื่อเพิ่มพร้อมกันหลายเครื่อง
   const id=isNew?Number(Date.now().toString()+String(Math.floor(Math.random()*1000)).padStart(3,"0")):editingId;
   const data={...(isNew?{}:projects.find(p=>p.id===editingId)||{}),id,name,tambon:document.getElementById("fTambon").value.trim(),district:document.getElementById("fDistrict").value.trim(),agency:document.getElementById("fAgency").value.trim(),budget:document.getElementById("fBudget").value.trim(),status:document.getElementById("fStatus").value,detail:document.getElementById("fDetail").value.trim(),lat:Number(latText),lng:Number(lngText),color:document.getElementById("fColor").value};
+  data.agencyType=document.getElementById("fAgencyType").value;
   data.budgetSource=document.getElementById("fBudgetSource").value.trim();data.budgetAgency=document.getElementById("fBudgetAgency").value.trim();data.projectOrigin=document.getElementById("fProjectOrigin").value.trim();data.contractNumber=document.getElementById("fContractNumber").value.trim();data.contractor=document.getElementById("fContractor").value.trim();data.fiscalYear=document.getElementById("fFiscalYear").value.trim();data.startDate=document.getElementById("fStartDate").value.trim();data.endDate=document.getElementById("fEndDate").value.trim();data.inspectionStatus=document.getElementById("fInspectionStatus").value.trim();data.otherInfo=document.getElementById("fOtherInfo").value.trim();data.cause=document.getElementById("fCause").value.trim();data.impact=document.getElementById("fImpact").value.trim();data.damageAmount=document.getElementById("fDamageAmount").value.trim();data.affectedPeople=document.getElementById("fAffectedPeople").value.trim();data.affectedArea=document.getElementById("fAffectedArea").value.trim();data.damageDate=document.getElementById("fDamageDate").value.trim();data.damageVerification=document.getElementById("fDamageVerification").value.trim();data.mapUrl=document.getElementById("fMapUrl").value.trim();
   busy=true;syncMessage("⏳ กำลังอัปโหลดและบันทึก กรุณารอ...");
   try{
+    for(const [stage,key] of [["before","photosBefore"],["during","photosDuring"],["after","photosAfter"]]){
+      data[key]=[];
+      for(const photo of editingStagePhotos[stage]){
+        if(typeof photo==="string")data[key].push(photo);
+        else if(photo.pending){const result=await uploadMedia(photo.pending);data[key].push(result.url);}
+      }
+    }
     data.photos=[];for(const p of editingPhotos){if(typeof p==="string")data.photos.push(p);else if(p.pending){const r=await uploadMedia(p.pending);data.photos.push(r.url);}}
     data.files=[];for(const f of editingFiles){if(f.pending)data.files.push(await uploadMedia(f.pending));else data.files.push(f);}
     await writeProject(data,isNew);editingId=id;await loadOnlineProjects();closeEditor();if(temporaryMarker){map.removeLayer(temporaryMarker);temporaryMarker=null;}map.setView([data.lat,data.lng],12);alert("บันทึกออนไลน์สำเร็จ");
