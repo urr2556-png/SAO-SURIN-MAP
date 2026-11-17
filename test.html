@@ -11,6 +11,8 @@
   href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
 />
 
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 <style>
 * {
   box-sizing: border-box;
@@ -371,6 +373,7 @@ footer {
 
   <button onclick="exportData()">💾 ส่งออก JSON</button>
   <button type="button" class="sao-admin-btn" onclick="showAdminDeleteInfo()">🔐 ผู้ดูแลระบบ</button>
+  <a class="sao-road-btn" href="confidential.html" aria-label="ส่งข้อมูลโครงการเป็นความลับถึง สตง.">🔒 แจ้งข้อมูลลับถึง สตง.</a>
   <a class="sao-road-btn" href="https://urr2556-png.github.io/SAO-SURIN-ROAD-MAP/" target="_blank" rel="noopener noreferrer" aria-label="เปิดระบบแผนที่ติดตามถนนชำรุด">🛣️ แผนที่ถนนชำรุด ↗</a>
 
   <button class="hidden" onclick="document.getElementById('importFile').click()">
@@ -533,6 +536,7 @@ footer {
 </footer>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
 <script>
 "use strict";
@@ -846,7 +850,18 @@ L.tileLayer(
   }
 ).addTo(map);
 
-const markerLayer = L.layerGroup().addTo(map);
+// Group nearby markers; clicking a group zooms in, and exact overlaps spiderfy.
+// Falls back to ordinary markers if the optional plugin is unavailable.
+const markerLayer = typeof L.markerClusterGroup === "function"
+  ? L.markerClusterGroup({
+      showCoverageOnHover: false,
+      zoomToBoundsOnClick: true,
+      spiderfyOnMaxZoom: true,
+      spiderfyDistanceMultiplier: 1.7,
+      maxClusterRadius: 45,
+      disableClusteringAtZoom: 18
+    }).addTo(map)
+  : L.layerGroup().addTo(map);
 
 // หมายเลขบนหมุดเป็นเลขลำดับสำหรับแสดงผล ไม่ใช่รหัสฐานข้อมูล
 // เก็บ ID เดิมไว้เสมอ เพื่อไม่ให้กระทบการแก้ไขและข้อมูล 19 โครงการ
